@@ -28,11 +28,14 @@ async def create_car(db: AsyncSession, number: str, date: str, time: str, image:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_cars(db: AsyncSession, page: int = 1, limit: int = 10, date: str = None, week: str = None):
+async def get_cars(
+        db: AsyncSession,
+        page: int = 1,
+        limit: int = 10,
+        date: str = None,
+        week: str = None
+):
     query = select(Car).offset((page - 1) * limit).limit(limit)
-
-    start_date = None
-    end_date = None
 
     if date:
         try:
@@ -141,24 +144,44 @@ async def get_cars(db: AsyncSession, page: int = 1, limit: int = 10, date: str =
         "graphic": rounded_response
     }
 
-# if date:
-#     # Find the earliest attendance record for the car within the date range
-#     result_first_car = await db.execute(
-#         select(Car)
-#         .filter(Car.number == car.number, Car.date == date)
-#         .order_by(Car.time.asc())
-#         .limit(1)
-#     )
-#     first_car_attend = result_first_car.scalars().first()
-#     first_car_attendances[car.number] = first_car_attend
-#
-#     # Find the latest attendance record for the car within the date range
-#     result_last_car = await db.execute(
-#         select(Car)
-#         .filter(Car.number == car.number, Car.date == date)
-#         .order_by(Car.time.desc())
-#         .limit(1)
-#     )
-#     last_car_attend = result_last_car.scalars().first()
-#     last_car_attendances[car.number] = last_car_attend
 
+async def get_car(
+        db: AsyncSession,
+        car_number: str,
+        date: str,
+        page: int = 1,
+        limit: int = 10
+):
+    query = select(Car).filter_by(number=car_number).offset((page - 1) * limit).limit(limit)
+    stmt = query.filter(Car.date.startswith(date))
+    result = await db.execute(stmt)
+    cars_attendances = result.scalars().all()
+
+    response = []
+    first_attendances = {}
+    last_attendances = {}
+
+    for car in cars_attendances:
+        if car.date not in first_attendances:
+            first_attendances[car.date] = car
+        elif car.time < first_attendances[car.date].time:
+            first_attendances[car.date] = car
+
+        if car.date not in last_attendances:
+            last_attendances[car.date] = car
+        elif car.time > last_attendances[car.date].time:
+            last_attendances[car.date] = car
+
+    for date in first_attendances:
+        response.append(
+            {
+                "date": date,
+                "car_number": first_attendances[date].number,
+                "first_time": first_attendances[date].time,
+                "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
+                "last_time": last_attendances[date].time,
+                "last_image": f"{BASE_URL}{last_attendances[date].image_url}"
+            }
+        )
+
+    return response
