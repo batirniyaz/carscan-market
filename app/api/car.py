@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 
 from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPException
 from app.schemas.car import CarResponse
@@ -7,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.car import create_car, get_cars, get_car
 
 router = APIRouter()
+current_tz = pytz.timezone("Asia/Samarkand")
 
 
 @router.post("/", response_model=CarResponse)
@@ -16,12 +18,12 @@ async def create_car_endpoint(
             ...,
             description="The date of the car",
             alias="car-date",
-            example=f"{datetime.now().strftime('%Y-%m-%d')}"),
+            example=f"{datetime.now(current_tz).strftime('%Y-%m-%d')}"),
         time: str = Query(
             ...,
             description="The time of the car",
             alias="car-time",
-            example=f"{datetime.now().strftime('%H:%M:%S')}"),
+            example=f"{datetime.now(current_tz).strftime('%H:%M:%S')}"),
         db: AsyncSession = Depends(get_async_session),
         image: UploadFile = File(None)
 ):
@@ -53,7 +55,7 @@ async def get_cars_endpoint(
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
         day: str = Query(
-            datetime.now().strftime("%Y-%m-%d"),
+            datetime.now(current_tz).strftime("%Y-%m-%d"),
             description="The date should be in format DD",
             alias="day",
         ),
@@ -67,7 +69,7 @@ async def get_cars_endpoint(
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
         month: str = Query(
-            datetime.now().strftime("%Y-%m"),
+            datetime.now(current_tz).strftime("%Y-%m"),
             description="The date should be in format MM",
             alias="month",
         ),
@@ -81,7 +83,7 @@ async def get_cars_endpoint(
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
         week: str = Query(
-            datetime.now().strftime("%Y-%W "),
+            datetime.now(current_tz).strftime("%Y-%W "),
             description="The date should be in format YYYY-WW ",
             alias="week",
         ),
@@ -93,9 +95,8 @@ async def get_cars_endpoint(
 async def get_car_endpoint(
         car_number: str,
         db: AsyncSession = Depends(get_async_session),
-        # car_number: str = Query(..., description="The number of the car", alias="car-number", example="95A123BB"),
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
-        date: str = Query(datetime.now().strftime("%Y-%m"), description="The month of the car", alias="month"),
+        date: str = Query(datetime.now(current_tz).strftime("%Y-%m"), description="The month of the car", alias="month"),
 ):
     return await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
