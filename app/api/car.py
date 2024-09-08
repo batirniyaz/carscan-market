@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPExc
 from app.schemas.car import CarResponse
 from app.auth.database import get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.car import create_car, get_cars
+from app.crud.car import create_car, get_cars, get_car
 
 router = APIRouter()
 
@@ -12,8 +12,16 @@ router = APIRouter()
 @router.post("/", response_model=CarResponse)
 async def create_car_endpoint(
         number: str = Query(..., description="The number of the car", alias="car-number", example="95A123BB"),
-        date: str = Query(..., description="The date of the car", alias="car-date", example="2021-01-01"),
-        time: str = Query(..., description="The time of the car", alias="car-time", example="12:00:00"),
+        date: str = Query(
+            ...,
+            description="The date of the car",
+            alias="car-date",
+            example=f"{datetime.now().strftime('%Y-%m-%d')}"),
+        time: str = Query(
+            ...,
+            description="The time of the car",
+            alias="car-time",
+            example=f"{datetime.now().strftime('%H:%M:%S')}"),
         db: AsyncSession = Depends(get_async_session),
         image: UploadFile = File(None)
 ):
@@ -79,3 +87,15 @@ async def get_cars_endpoint(
         ),
 ):
     return await get_cars(db=db, page=page, limit=limit, date=None, week=week)
+
+
+@router.get("/{car_number}")
+async def get_car_endpoint(
+        car_number: str,
+        db: AsyncSession = Depends(get_async_session),
+        # car_number: str = Query(..., description="The number of the car", alias="car-number", example="95A123BB"),
+        page: int = Query(1, description="The page number", alias="page"),
+        limit: int = Query(10, description="The number of cars per page", alias="limit"),
+        date: str = Query(datetime.now().strftime("%Y-%m"), description="The month of the car", alias="month"),
+):
+    return await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
