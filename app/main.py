@@ -24,9 +24,9 @@ async def lifespan(main_app: FastAPI):
     yield
 
 app = FastAPI(
-    title="Personal Webpage of Batirniyaz",
+    title="Car scan market",
     version="0.1",
-    summary="This is the personal webpage of Batirniyaz, where I will post my activity.",
+    summary="Webpage to control coming cars to market.",
     lifespan=lifespan,
 )
 
