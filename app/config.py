@@ -13,3 +13,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
 BASE_URL = os.getenv("BASE_URL")
+
+START_TIME = '07:00:00'
+END_TIME = '19:00:00'
