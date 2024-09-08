@@ -35,14 +35,17 @@ async def get_cars(
         date: str = None,
         week: str = None
 ):
-    query = select(Car).offset((page - 1) * limit).limit(limit)
+    query = select(Car)
+    with_pagination_query = query.offset((page - 1) * limit).limit(limit).order_by(Car.time.desc())
 
     if date:
         try:
             if len(date) == 10:  # yyyy-mm-dd
                 query = query.filter_by(date=date)
+                with_pagination_query = with_pagination_query.filter_by(date=date)
             elif len(date) == 7:  # yyyy-mm
                 query = query.filter(Car.date.startswith(date))
+                with_pagination_query = with_pagination_query.filter(Car.date.startswith(date))
             else:
                 raise ValueError
         except ValueError:
@@ -55,7 +58,8 @@ async def get_cars(
                 start_date = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w").date()
                 end_date = start_date + timedelta(days=6)
                 query = query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
-                print(f"start_date: {start_date}, end_date: {end_date}")
+                with_pagination_query = with_pagination_query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"),
+                                                                                      end_date.strftime("%Y-%m-%d")))
             else:
                 raise ValueError
         except ValueError:
@@ -64,7 +68,21 @@ async def get_cars(
     result = await db.execute(query)
     cars = result.scalars().all()
 
-    response = []
+    with_pagination_result = await db.execute(with_pagination_query)
+    cars_with_pagination = with_pagination_result.scalars().all()
+
+    last_attendances = []
+
+    for car in cars_with_pagination:
+
+        last_attendances.append({
+            "attend_id": car.id,
+            "car_number": car.number,
+            "attend_date": car.date,
+            "attend_time": car.time,
+            "image_url": f"{BASE_URL}{car.image_url}"
+        })
+
     unique_cars = set()
     attend_count = {}
 
@@ -76,14 +94,6 @@ async def get_cars(
 
         if car.number not in unique_cars:
             unique_cars.add(car.number)
-
-        response.append({
-            "attend_id": car.id,
-            "car_number": car.number,
-            "attend_date": car.date,
-            "attend_time": car.time,
-            "image_url": f"{BASE_URL}{car.image_url}"
-        })
 
     sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
 
@@ -138,7 +148,7 @@ async def get_cars(
         rounded_response = [{"weekday": weekday, "count": count} for weekday, count in weekday_slots.items()]
 
     return {
-        "general": response,
+        "general": last_attendances,
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response
@@ -185,3 +195,4 @@ async def get_car(
         )
 
     return response
+
