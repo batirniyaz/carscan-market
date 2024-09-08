@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-from redis import asyncio as aioredis
+# from fastapi_cache import FastAPICache
+# from fastapi_cache.backends.redis import RedisBackend
+# from redis import asyncio as aioredis
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,8 +18,8 @@ from app.api import router
 async def lifespan(main_app: FastAPI):
     await create_db_and_tables()
 
-    redis = aioredis.from_url("redis://localhost")
-    FastAPICache.init(RedisBackend(redis), prefix="carscan-market-cache")
+    # redis = aioredis.from_url("redis://localhost")
+    # FastAPICache.init(RedisBackend(redis), prefix="carscan-market-cache")
 
     yield
 
