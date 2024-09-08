@@ -51,3 +51,4 @@ urllib3==2.2.2
 uvicorn==0.30.5
 passlib==1.7.4
 python-jose==3.3.0
+pytz==2024.1
