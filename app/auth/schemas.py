@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi_users import schemas, models
-from pydantic import EmailStr, ConfigDict
+from pydantic import EmailStr, ConfigDict, BaseModel
 
 
 class UserRead(schemas.BaseUser[int]):
@@ -31,3 +31,8 @@ class UserUpdate(schemas.BaseUserUpdate):
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
     is_verified: Optional[bool] = None
+
+
+class PhoneNumberLoginRequest(BaseModel):
+    phone_number: str
+    password: str
