@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPException
 from app.schemas.car import CarResponse
 from app.auth.database import get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.car import create_car
+from app.crud.car import create_car, get_cars
 
 router = APIRouter()
 
@@ -35,3 +37,45 @@ async def create_car_endpoint(
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/day")
+async def get_cars_endpoint(
+        db: AsyncSession = Depends(get_async_session),
+        page: int = Query(1, description="The page number", alias="page"),
+        limit: int = Query(10, description="The number of cars per page", alias="limit"),
+        day: str = Query(
+            datetime.now().strftime("%Y-%m-%d"),
+            description="The date should be in format DD",
+            alias="day",
+        ),
+):
+    return await get_cars(db=db, page=page, limit=limit, date=day)
+
+
+@router.get("/month")
+async def get_cars_endpoint(
+        db: AsyncSession = Depends(get_async_session),
+        page: int = Query(1, description="The page number", alias="page"),
+        limit: int = Query(10, description="The number of cars per page", alias="limit"),
+        month: str = Query(
+            datetime.now().strftime("%Y-%m"),
+            description="The date should be in format MM",
+            alias="month",
+        ),
+):
+    return await get_cars(db=db, page=page, limit=limit, date=month)
+
+
+@router.get("/week")
+async def get_cars_endpoint(
+        db: AsyncSession = Depends(get_async_session),
+        page: int = Query(1, description="The page number", alias="page"),
+        limit: int = Query(10, description="The number of cars per page", alias="limit"),
+        week: str = Query(
+            datetime.now().strftime("%Y-%W "),
+            description="The date should be in format YYYY-WW ",
+            alias="week",
+        ),
+):
+    return await get_cars(db=db, page=page, limit=limit, date=None, week=week)
