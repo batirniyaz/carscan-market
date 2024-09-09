@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import UploadFile, HTTPException
@@ -113,14 +112,15 @@ async def get_cars(
         elif week:
             rounded_response_future = executor.submit(process_rounded_weekday, cars)
 
-        top10response = top10response_future.result()
+        top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
 
     return {
         "general": last_attendances,
         "top10": top10response,
         "total_cars": len(unique_cars),
-        "graphic": rounded_response if rounded_response else []
+        "graphic": rounded_response if rounded_response else [],
+        "all_cars": all_car_response
     }
 
 
