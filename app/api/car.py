@@ -96,6 +96,11 @@ async def get_car_endpoint(
         db: AsyncSession = Depends(get_async_session),
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
-        date: str = Query(datetime.now(current_tz).strftime("%Y-%m"), description="The month of the car", alias="month"),
+        date: str = Query(
+            ...,
+            description="The month or day of the car",
+            alias="date",
+            example=f"{datetime.now(current_tz).strftime('%Y-%m')}",
+        ),
 ):
     return await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
