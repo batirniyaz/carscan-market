@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile, HTTPException, status
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from concurrent.futures import ThreadPoolExecutor
 
-from app.config import BASE_URL, START_TIME, END_TIME
+from app.config import BASE_URL
 
 from app.models.car import Car
 from app.models.exception_nums import Number
@@ -132,36 +132,53 @@ async def get_car(
         limit: int = 10
 ):
     query = select(Car).filter_by(number=car_number).offset((page - 1) * limit).limit(limit)
-    stmt = query.filter(Car.date.startswith(date))
+
+    if len(date) == 7:
+        stmt = query.filter(Car.date.startswith(date))
+    else:
+        stmt = query.filter_by(date=date)
     result = await db.execute(stmt)
     cars_attendances = result.scalars().all()
 
+    if not cars_attendances:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car attendances not found")
+
     response = []
-    first_attendances = {}
-    last_attendances = {}
+    if len(date) == 7:
+        first_attendances = {}
+        last_attendances = {}
 
-    for car in cars_attendances:
-        if car.date not in first_attendances:
-            first_attendances[car.date] = car
-        elif car.time < first_attendances[car.date].time:
-            first_attendances[car.date] = car
+        for car in cars_attendances:
+            if car.date not in first_attendances:
+                first_attendances[car.date] = car
+            elif car.time < first_attendances[car.date].time:
+                first_attendances[car.date] = car
 
-        if car.date not in last_attendances:
-            last_attendances[car.date] = car
-        elif car.time > last_attendances[car.date].time:
-            last_attendances[car.date] = car
+            if car.date not in last_attendances:
+                last_attendances[car.date] = car
+            elif car.time > last_attendances[car.date].time:
+                last_attendances[car.date] = car
 
-    for date in first_attendances:
-        response.append(
-            {
-                "date": date,
-                "car_number": first_attendances[date].number,
-                "first_time": first_attendances[date].time,
-                "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
-                "last_time": last_attendances[date].time,
-                "last_image": f"{BASE_URL}{last_attendances[date].image_url}"
-            }
-        )
+        for date in first_attendances:
+            response.append(
+                {
+                    "date": date,
+                    "car_number": first_attendances[date].number,
+                    "first_time": first_attendances[date].time,
+                    "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
+                    "last_time": last_attendances[date].time,
+                    "last_image": f"{BASE_URL}{last_attendances[date].image_url}"
+                }
+            )
+    else:
+        for car in cars_attendances:
+            response.append(
+                {
+                    "time": car.time,
+                    "image": f"{BASE_URL}{car.image_url}"
+                }
+            )
 
     return response
+
 
