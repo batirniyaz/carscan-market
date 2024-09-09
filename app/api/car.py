@@ -83,8 +83,8 @@ async def get_cars_endpoint(
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
         week: str = Query(
-            datetime.now(current_tz).strftime("%Y-%W "),
-            description="The date should be in format YYYY-WW ",
+            datetime.now(current_tz).strftime("%Y-%W"),
+            description="The date should be in format YYYY-WW",
             alias="week",
         ),
 ):
