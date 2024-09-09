@@ -43,14 +43,21 @@ async def store_daily_report():
             total_cars = response["total_cars"]
             all_cars = response["all_cars"]
 
+            top10_cars = []
+            for car in top10:
+                if car["attend_count"] > 2:
+                    if START_TIME <= car["attend_time"] <= END_TIME:
+                        top10_cars.append(car)
+
             general_cars = []
             for car in all_cars:
-                if car["attend_count"] > 2 and START_TIME <= car["time"] <= END_TIME:
-                    general_cars.append(car)
+                if car["attend_count"] > 2:
+                    if START_TIME <= car["attend_time"] <= END_TIME:
+                        general_cars.append(car)
 
             daily_report = DailyReport(
                 date=current_date,
-                top10=top10,
+                top10=top10_cars,
                 general_count=len(general_cars),
                 overall_count=total_cars
             )
@@ -59,7 +66,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule.every().day.at("16:12").do(lambda: asyncio.create_task(store_daily_report()))
+    schedule.every().day.at("17:19").do(lambda: asyncio.create_task(store_daily_report()))
 
 
 async def run_scheduler():
