@@ -58,6 +58,7 @@ async def store_daily_report():
             daily_report = DailyReport(
                 date=current_date,
                 top10=top10_cars,
+                general=general_cars,
                 general_count=len(general_cars),
                 overall_count=total_cars
             )
