@@ -15,6 +15,8 @@ class Car(Base):
     time: Mapped[str] = mapped_column()
     image_url: Mapped[str] = mapped_column(nullable=True)
 
-    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
-    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc),
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),
+                                                          default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),
+                                                          default=lambda: datetime.datetime.now(datetime.timezone.utc),
                                                           onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
