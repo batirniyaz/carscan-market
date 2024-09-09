@@ -1,12 +1,27 @@
+import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import UploadFile, HTTPException
-from app.utils.time_utils import round_time_slot
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.utils.file_utils import save_upload_file
-from app.config import BASE_URL
+from concurrent.futures import ThreadPoolExecutor
+
+from app.config import BASE_URL, START_TIME, END_TIME
+
 from app.models.car import Car
+from app.models.exception_nums import Number
+
+from app.utils.file_utils import save_upload_file
+
+from app.crud.car_processes import (
+    process_last_attendances,
+    process_attend_count,
+    process_top10_response,
+    process_rounded_time,
+    process_rounded_month,
+    process_rounded_weekday
+)
 
 
 async def create_car(db: AsyncSession, number: str, date: str, time: str, image: UploadFile):
@@ -37,6 +52,9 @@ async def get_cars(
 ):
     query = select(Car)
     with_pagination_query = query.offset((page - 1) * limit).limit(limit).order_by(Car.time.desc())
+
+    external_res = await db.execute(select(Number))
+    external_cars = external_res.scalars().all()
 
     if date:
         try:
@@ -71,87 +89,38 @@ async def get_cars(
     with_pagination_result = await db.execute(with_pagination_query)
     cars_with_pagination = with_pagination_result.scalars().all()
 
-    last_attendances = []
+    external_car_numbers = [external.number for external in external_cars]
+    cars_with_pagination = [car for car in cars_with_pagination if car.number not in external_car_numbers]
+    cars = [car for car in cars if car.number not in external_car_numbers]
 
-    for car in cars_with_pagination:
+    with ThreadPoolExecutor() as executor:
+        # Submit tasks
+        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
+        attend_count_future = executor.submit(process_attend_count, cars)
 
-        last_attendances.append({
-            "attend_id": car.id,
-            "car_number": car.number,
-            "attend_date": car.date,
-            "attend_time": car.time,
-            "image_url": f"{BASE_URL}{car.image_url}"
-        })
+        last_attendances = last_attendances_future.result()
+        attend_count, unique_cars, sorted_cars = attend_count_future.result()
 
-    unique_cars = set()
-    attend_count = {}
+        top10response_future = executor.submit(process_top10_response, sorted_cars, attend_count)
 
-    for car in cars:
-        if car.number not in attend_count:
-            attend_count[car.number] = 1
-        else:
-            attend_count[car.number] += 1
+        # Handle date-based processing
+        rounded_response_future = None
+        if date:
+            if len(date) == 10:
+                rounded_response_future = executor.submit(process_rounded_time, cars)
+            elif len(date) == 7:
+                rounded_response_future = executor.submit(process_rounded_month, cars)
+        elif week:
+            rounded_response_future = executor.submit(process_rounded_weekday, cars)
 
-        if car.number not in unique_cars:
-            unique_cars.add(car.number)
-
-    sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
-
-    top10response = []
-    added_cars = set()
-    for car in sorted_cars:
-        if car.number not in added_cars:
-            top10response.append({
-                "attend_id": car.id,
-                "car_number": car.number,
-                "attend_date": car.date,
-                "attend_time": car.time,
-                "image_url": f"{BASE_URL}{car.image_url}",
-                "attend_count": attend_count[car.number]
-            })
-            added_cars.add(car.number)
-            if len(top10response) == 10:
-                break
-
-    rounded_response = []
-
-    if date:
-        if len(date) == 10:
-            time_slots = {}
-            for car in cars:
-                rounded_time = round_time_slot(datetime.strptime(car.time, "%H:%M:%S"))
-                if rounded_time not in time_slots:
-                    time_slots[rounded_time] = 1
-                else:
-                    time_slots[rounded_time] += 1
-
-            rounded_response = [{"time": time, "count": count} for time, count in time_slots.items()]
-        elif len(date) == 7:
-            day_slots = {}
-            for car in cars:
-                if car.date not in day_slots:
-                    day_slots[car.date] = 1
-                else:
-                    day_slots[car.date] += 1
-
-            rounded_response = [{"day": day, "count": count} for day, count in day_slots.items()]
-
-    elif week:
-        weekday_slots = {}
-        for car in cars:
-            weekday = datetime.strptime(car.date, "%Y-%m-%d").strftime("%A").lower()
-            if weekday not in weekday_slots:
-                weekday_slots[weekday] = 1
-            else:
-                weekday_slots[weekday] += 1
-
-        rounded_response = [{"weekday": weekday, "count": count} for weekday, count in weekday_slots.items()]
+        top10response = top10response_future.result()
+        rounded_response = rounded_response_future.result() if rounded_response_future else []
 
     return {
         "general": last_attendances,
         "top10": top10response,
         "total_cars": len(unique_cars),
-        "graphic": rounded_response
+        "graphic": rounded_response if rounded_response else []
     }
 
 
