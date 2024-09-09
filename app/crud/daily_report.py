@@ -66,7 +66,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule.every().day.at("17:19").do(lambda: asyncio.create_task(store_daily_report()))
+    schedule.every().day.at("23:55").do(lambda: asyncio.create_task(store_daily_report()))
 
 
 async def run_scheduler():
