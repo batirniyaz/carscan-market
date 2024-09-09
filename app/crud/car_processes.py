@@ -57,7 +57,20 @@ def process_top10_response(sorted_cars, attend_count):
             if len(top10response) == 10:
                 break
 
-    return top10response
+    all_car_response = []
+    for car in sorted_cars:
+        if car.number not in added_cars:
+            all_car_response.append({
+                "attend_id": car.id,
+                "car_number": car.number,
+                "attend_date": car.date,
+                "attend_time": car.time,
+                "image_url": f"{BASE_URL}{car.image_url}",
+                "attend_count": attend_count[car.number]
+            })
+            added_cars.add(car.number)
+
+    return top10response, all_car_response
 
 
 def process_rounded_time(cars):
