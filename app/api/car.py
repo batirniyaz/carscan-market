@@ -1,5 +1,5 @@
 from datetime import datetime
-import pytz
+from app.config import current_tz
 
 from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPException
 from app.schemas.car import CarResponse
@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.car import create_car, get_cars, get_car
 
 router = APIRouter()
-current_tz = pytz.timezone("Asia/Samarkand")
 
 
 @router.post("/", response_model=CarResponse)
