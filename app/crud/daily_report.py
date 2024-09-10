@@ -1,3 +1,5 @@
+import os
+
 import schedule
 import asyncio
 import pandas as pd
@@ -100,8 +102,9 @@ async def create_excel_report(db: AsyncSession, date: str):
                         )
 
         df = pd.DataFrame(formated_response)
+        reports_dir = "app/reports"
 
-        excel_file_path = f"daily_report_{date}.xlsx"
+        excel_file_path = os.path.join(reports_dir, f"daily_report_{date}.xlsx")
         df.to_excel(excel_file_path, index=False)
 
         return excel_file_path
