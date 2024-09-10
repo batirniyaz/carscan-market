@@ -1,17 +1,19 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
-from app.utils.excel_file_utils import create_excel_file
-import json
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.crud.daily_report import create_excel_report
+
+from app.auth.database import get_async_session
 
 router = APIRouter()
 
 
-@router.get("/export-data")
-async def export_data(data, file_name):
-    try:
-        data_dict = json.loads(data)
-    except json.JSONDecodeError:
-        return {"message": "Invalid data format"}
+@router.get("/daily-report/")
+async def export_data(date: str, db: AsyncSession = Depends(get_async_session)):
 
-    file_data = create_excel_file(data_dict, file_name)
-    return {"message": "Exporting data", "file": FileResponse(file_data)}
+    file_data = await create_excel_report(db, date)
+    return FileResponse(
+        path=file_data,
+        filename=f"report_{date}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
