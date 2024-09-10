@@ -16,3 +16,13 @@ async def create_exception_num(db: AsyncSession, number: str):
 async def get_exception_nums(db: AsyncSession):
     res = await db.execute(select(Number))
     return res.scalars().all()
+
+
+async def delete_exception_num(db: AsyncSession, car_number: str):
+    res = await db.execute(select(Number).filter_by(number=car_number))
+    db_exception_num = res.scalar_one_or_none()
+    if not db_exception_num:
+        return {"detail": "Number not found"}
+    await db.delete(db_exception_num)
+    await db.commit()
+    return {"detail": "Number deleted"}
