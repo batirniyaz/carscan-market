@@ -77,6 +77,39 @@ def schedule_daily_report():
     schedule.every().day.at("23:55").do(lambda: asyncio.create_task(store_daily_report()))
 
 
+async def create_excel_report(db: AsyncSession, date: str):
+
+    daily_report = await define_date_type(db, date)
+    daily_report_car_numbers = [car["car_number"] for car in daily_report.general]
+
+    if len(date) == 10:
+        data = await get_car(db=db, date=date, page=None, limit=None, car_number=None)
+        formated_data = [car if car["car_number"] in daily_report_car_numbers else None for car in data]
+        formated_response = []
+        for car in formated_data:
+            if car is not None:
+                for attend in daily_report.general:
+                    if attend["car_number"] == car["car_number"]:
+                        formated_response.append(
+                            {
+                                "car_number": car["car_number"],
+                                "attend_count": attend["attend_count"],
+                                "first_time": car["first_time"],
+                                "last_time": car["last_time"],
+                            }
+                        )
+
+        df = pd.DataFrame(formated_response)
+
+        excel_file_path = f"daily_report_{date}.xlsx"
+        df.to_excel(excel_file_path, index=False)
+
+        return excel_file_path
+    else:
+        # create excel report for the given month
+        return
+
+
 async def run_scheduler():
     while True:
         schedule.run_pending()
