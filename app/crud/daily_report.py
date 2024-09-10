@@ -1,5 +1,6 @@
 import schedule
 import asyncio
+import pandas as pd
 
 from fastapi import HTTPException, status
 from datetime import datetime
@@ -10,13 +11,12 @@ from sqlalchemy.future import select
 from app.config import current_tz
 from app.auth.database import get_async_session
 from app.models.daily_report import DailyReport
-from app.crud.car import get_cars
+from app.crud.car import get_cars, get_car
 
 from app.config import START_TIME, END_TIME
 
 
-async def get_daily_report(db: AsyncSession, date: str):
-
+async def define_date_type(db: AsyncSession, date: str):
     query = select(DailyReport)
 
     if len(date) == 10:
@@ -28,6 +28,13 @@ async def get_daily_report(db: AsyncSession, date: str):
 
     if not daily_report:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Daily report not found")
+
+    return daily_report
+
+
+async def get_daily_report(db: AsyncSession, date: str):
+
+    daily_report = await define_date_type(db, date)
 
     return daily_report
 
@@ -75,6 +82,6 @@ async def run_scheduler():
         schedule.run_pending()
         await asyncio.sleep(1)
 
+
 schedule_daily_report()
 asyncio.create_task(run_scheduler())
-
