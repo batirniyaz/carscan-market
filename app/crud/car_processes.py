@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from typing import Optional
 
 from app.config import BASE_URL
 from app.utils.time_utils import round_time_slot
@@ -23,6 +24,7 @@ def process_last_attendances(cars_with_pagination):
 def process_attend_count(cars):
     unique_cars = set()
     attend_count = {}
+    attend_count_cars = {}
 
     for car in cars:
 
@@ -31,12 +33,17 @@ def process_attend_count(cars):
         else:
             attend_count[car.number] += 1
 
+        if car.date not in attend_count_cars:
+            attend_count_cars[car.date] = 1
+        else:
+            attend_count_cars[car.date] += 1
+
         if car.number not in unique_cars:
             unique_cars.add(car.number)
 
     sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
 
-    return attend_count, unique_cars, sorted_cars
+    return attend_count, unique_cars, sorted_cars, attend_count_cars
 
 
 def process_top10_response(sorted_cars, attend_count):
