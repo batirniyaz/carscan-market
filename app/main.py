@@ -38,6 +38,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+async def read_root():
+    return {"message": "Hello, This is root path!"}
+
 app.include_router(auth_router)
 app.include_router(router)
 app.mount("/storage", StaticFiles(directory="app/storage"), name="storage")
