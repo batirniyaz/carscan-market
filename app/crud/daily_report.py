@@ -1,8 +1,5 @@
-import os
-
 import schedule
 import asyncio
-import pandas as pd
 
 from fastapi import HTTPException, status
 from datetime import datetime
@@ -14,6 +11,7 @@ from app.config import current_tz
 from app.auth.database import get_async_session
 from app.models.daily_report import DailyReport
 from app.crud.car import get_cars, get_car
+from app.utils.excel_file_utils import create_excel_file
 
 from app.config import START_TIME, END_TIME
 
@@ -76,15 +74,15 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule.every().day.at("23:55").do(lambda: asyncio.create_task(store_daily_report()))
+    schedule.every().day.at("23:00").do(lambda: asyncio.create_task(store_daily_report()))
 
 
 async def create_excel_report(db: AsyncSession, date: str):
 
     daily_report = await define_date_type(db, date)
-    daily_report_car_numbers = [car["car_number"] for car in daily_report.general]
 
     if len(date) == 10:
+        daily_report_car_numbers = [car["car_number"] for car in daily_report.general]
         data = await get_car(db=db, date=date, page=None, limit=None, car_number=None)
         formated_data = [car if car["car_number"] in daily_report_car_numbers else None for car in data]
         formated_response = []
@@ -101,16 +99,29 @@ async def create_excel_report(db: AsyncSession, date: str):
                             }
                         )
 
-        df = pd.DataFrame(formated_response)
-        reports_dir = "app/reports"
+        excel_report = await create_excel_file(formated_response, file_name=f"daily_report_{date}")
 
-        excel_file_path = os.path.join(reports_dir, f"daily_report_{date}.xlsx")
-        df.to_excel(excel_file_path, index=False)
-
-        return excel_file_path
+        return excel_report
     else:
-        # create excel report for the given month
-        return
+        formated_general_data = []
+        for report in daily_report:
+            daily_count = 0
+            non_paid_count = report.overall_count - report.general_count
+            for car in report.general:
+                daily_count += car["attend_count"]
+            formated_general_data.append(
+                {
+                    "date": report.date,
+                    "daily_count": daily_count,
+                    "average_come": daily_count / report.general_count if report.general_count != 0 else 0,
+                    "paid_car": report.general_count,
+                    "non_paid_car": non_paid_count,
+                }
+            )
+
+        excel_report = await create_excel_file(formated_general_data, file_name=f"monthly_report_{date}")
+
+        return excel_report
 
 
 async def run_scheduler():
