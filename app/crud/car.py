@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 from fastapi import UploadFile, HTTPException, status
 
@@ -93,7 +94,6 @@ async def get_cars(
     cars = [car for car in cars if car.number not in external_car_numbers]
 
     with ThreadPoolExecutor() as executor:
-        # Submit tasks
         last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
         attend_count_future = executor.submit(process_attend_count, cars)
 
@@ -102,7 +102,6 @@ async def get_cars(
 
         top10response_future = executor.submit(process_top10_response, sorted_cars, attend_count)
 
-        # Handle date-based processing
         rounded_response_future = None
         if date:
             if len(date) == 10:
@@ -126,17 +125,26 @@ async def get_cars(
 
 async def get_car(
         db: AsyncSession,
-        car_number: str,
+        car_number: Optional[str],
         date: str,
-        page: int = 1,
-        limit: int = 10
+        page: Optional[int] = 1,
+        limit: Optional[int] = 10
 ):
-    query = select(Car).filter_by(number=car_number).offset((page - 1) * limit).limit(limit)
+    query = select(Car)
 
-    if len(date) == 7:
-        stmt = query.filter(Car.date.startswith(date))
+    if not car_number:
+        if len(date) == 10:
+            stmt = query.filter_by(date=date)
+        else:
+            stmt = query.filter(Car.date.startswith(date))
     else:
-        stmt = query.filter_by(date=date)
+        query = query.filter_by(number=car_number).offset((page - 1) * limit).limit(limit)
+
+        if len(date) == 7:
+            stmt = query.filter(Car.date.startswith(date))
+        else:
+            stmt = query.filter_by(date=date)
+
     result = await db.execute(stmt)
     cars_attendances = result.scalars().all()
 
@@ -144,9 +152,11 @@ async def get_car(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car attendances not found")
 
     response = []
-    if len(date) == 7:
-        first_attendances = {}
-        last_attendances = {}
+
+    first_attendances = {}
+    last_attendances = {}
+
+    if car_number and len(date) == 7:
 
         for car in cars_attendances:
             if car.date not in first_attendances:
@@ -170,7 +180,8 @@ async def get_car(
                     "last_image": f"{BASE_URL}{last_attendances[date].image_url}"
                 }
             )
-    else:
+    elif car_number and len(date) == 10:
+
         for car in cars_attendances:
             response.append(
                 {
@@ -178,6 +189,31 @@ async def get_car(
                     "image": f"{BASE_URL}{car.image_url}"
                 }
             )
+    elif not car_number and len(date) == 10:
+        unique_cars = set()
+        for car in cars_attendances:
+            if car.number not in unique_cars:
+                unique_cars.add(car.number)
+                first_attendances[car.number] = car
+                last_attendances[car.number] = car
+            else:
+                if car.time < first_attendances[car.number].time:
+                    first_attendances[car.number] = car
+                if car.time > last_attendances[car.number].time:
+                    last_attendances[car.number] = car
+
+        for number in first_attendances:
+            response.append(
+                {
+                    "car_number": number,
+                    "first_time": first_attendances[number].time,
+                    "first_image": f"{BASE_URL}{first_attendances[number].image_url}",
+                    "last_time": last_attendances[number].time,
+                    "last_image": f"{BASE_URL}{last_attendances[number].image_url}"
+                }
+            )
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date or car format")
 
     return response
 
