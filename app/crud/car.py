@@ -22,6 +22,7 @@ from app.crud.car_processes import (
     process_rounded_month,
     process_rounded_weekday
 )
+from app.utils.excel_file_utils import create_excel_file
 
 
 async def create_car(db: AsyncSession, number: str, date: str, time: str, image: UploadFile):
@@ -45,8 +46,8 @@ async def create_car(db: AsyncSession, number: str, date: str, time: str, image:
 
 async def get_cars(
         db: AsyncSession,
-        page: int = 1,
-        limit: int = 10,
+        page: Optional[int] = 1,
+        limit: Optional[int] = 10,
         date: str = None,
         week: str = None
 ):
@@ -138,7 +139,9 @@ async def get_car(
         else:
             stmt = query.filter(Car.date.startswith(date))
     else:
-        query = query.filter_by(number=car_number).offset((page - 1) * limit).limit(limit)
+        query = query.filter_by(number=car_number)
+        if limit and page:
+            query = query.offset((page - 1) * limit).limit(limit)
 
         if len(date) == 7:
             stmt = query.filter(Car.date.startswith(date))
@@ -157,6 +160,8 @@ async def get_car(
     last_attendances = {}
 
     if car_number and len(date) == 7:
+
+        attend_count_cars, unique_cars, sorted_cars = process_attend_count(cars_attendances)
 
         for car in cars_attendances:
             if car.date not in first_attendances:
@@ -177,7 +182,8 @@ async def get_car(
                     "first_time": first_attendances[date].time,
                     "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
                     "last_time": last_attendances[date].time,
-                    "last_image": f"{BASE_URL}{last_attendances[date].image_url}"
+                    "last_image": f"{BASE_URL}{last_attendances[date].image_url}",
+                    "overall_count": attend_count_cars[first_attendances[date].number]
                 }
             )
     elif car_number and len(date) == 10:
@@ -216,5 +222,34 @@ async def get_car(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date or car format")
 
     return response
+
+
+async def create_excel_car(db: AsyncSession, date: str, car_number: str):
+
+    data = await get_car(db=db, car_number=car_number, date=date, page=None, limit=None)
+
+    formated_data = []
+    if data:
+        if len(date) == 10:
+            for car in data:
+                formated_data.append({
+                    "time": car["time"],
+                    "image": car["image"]
+                })
+
+        else:
+            for car in data:
+                formated_data.append({
+                    "date": car["date"],
+                    "overall_count": car["overall_count"],
+                })
+
+        excel_car = await create_excel_file(formated_data, file_name=f"car_{car_number}_date_{date}")
+
+        return excel_car
+
+    else:
+        return formated_data
+
 
 
