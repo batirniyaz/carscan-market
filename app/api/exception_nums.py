@@ -23,7 +23,7 @@ async def get_exception_nums_endpoint(
     return await get_exception_nums(db)
 
 
-@router.delete("/{car_number")
+@router.delete("/{car_number}")
 async def delete_exception_num_endpoint(
         car_number: str,
         db: AsyncSession = Depends(get_async_session),
