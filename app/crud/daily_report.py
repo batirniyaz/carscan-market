@@ -26,10 +26,7 @@ async def define_date_type(db: AsyncSession, date: str):
         result = await db.execute(query.filter(DailyReport.date.startswith(date)))
         daily_report = result.scalars().all()
 
-    if not daily_report:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Daily report not found")
-
-    return daily_report
+    return daily_report if daily_report else []
 
 
 async def get_daily_report(db: AsyncSession, date: str):
