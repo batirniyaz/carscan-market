@@ -13,7 +13,7 @@ class DailyReport(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     date: Mapped[str] = mapped_column()
     top10: Mapped[List[Dict]] = mapped_column(JSON, default=[])
-    general: Mapped[list[dict]] = mapped_column(JSON, default=[])
+    general: Mapped[List[Dict]] = mapped_column(JSON, default=[])
     general_count: Mapped[int] = mapped_column(default=0)
     overall_count: Mapped[int] = mapped_column(default=0)
 
