@@ -3,9 +3,11 @@ from app.config import current_tz
 
 from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPException
 from app.schemas.car import CarResponse
-from app.auth.database import get_async_session
+from app.auth.database import get_async_session, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.car import create_car, get_cars, get_car
+
+from app.auth.base_config import current_active_user
 
 router = APIRouter()
 
@@ -24,9 +26,13 @@ async def create_car_endpoint(
             alias="car-time",
             example=f"{datetime.now(current_tz).strftime('%H:%M:%S')}"),
         db: AsyncSession = Depends(get_async_session),
-        image: UploadFile = File(None)
+        image: UploadFile = File(None),
+        user: User = Depends(current_active_user)
 ):
     try:
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
         if not image:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image is required")
 
@@ -103,4 +109,10 @@ async def get_car_endpoint(
             example=f"{datetime.now(current_tz).strftime('%Y-%m')}",
         ),
 ):
+    if not car_number:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Car number is required")
+
+    if not page and limit:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page and limit are required")
+
     return await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
