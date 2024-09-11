@@ -208,25 +208,28 @@ async def get_car(
                 }
             )
     elif car_number and len(date) == 10:
-        special_response = {"cars": [], "overall_count": 0}
+        if limit is not None:
+            special_response = {"cars": [], "overall_count": 0}
 
-        for car in sorted_cars_attendances:
-            response.append(
-                {
+            for car in cars_attendances_without_pagination:
+                special_response["cars"].append({
                     "time": car.time,
                     "image": f"{BASE_URL}{car.image_url}",
-                }
-            )
+                })
 
-        for car in cars_attendances_without_pagination:
+                special_response["overall_count"] += 1
+            return special_response
 
-            special_response["cars"].append({
-                "time": car.time,
-                "image": f"{BASE_URL}{car.image_url}",
-            })
+        else:
 
-            special_response["overall_count"] += 1
-        return special_response
+            for car in sorted_cars_attendances:
+                response.append(
+                    {
+                        "time": car.time,
+                        "image": f"{BASE_URL}{car.image_url}",
+                    }
+                )
+
     elif not car_number and len(date) == 10:
         unique_cars = set()
         for car in cars_attendances:
