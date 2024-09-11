@@ -16,12 +16,7 @@ def process_last_attendances(cars_with_pagination, date):
             "image_url": f"{BASE_URL}{car.image_url}"
         })
 
-    if date is not None and len(date) == 10:
-        last_attendances_sorted = sorted(last_attendances, key=lambda x: x["attend_time"], reverse=True)
-    else:
-        last_attendances_sorted = sorted(last_attendances, key=lambda x: (x["attend_date"], x["attend_time"]), reverse=True)
-
-    return last_attendances_sorted
+    return last_attendances
 
 
 def process_last_attendances_without_pagination(cars):

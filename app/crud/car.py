@@ -53,7 +53,7 @@ async def get_cars(
         week: str = None
 ):
     query = select(Car)
-    with_pagination_query = query.offset((page - 1) * limit).limit(limit).order_by(Car.time.desc())
+    with_pagination_query = query.offset((page - 1) * limit).limit(limit)
 
     external_res = await db.execute(select(Number))
     external_cars = external_res.scalars().all()
@@ -62,10 +62,10 @@ async def get_cars(
         try:
             if len(date) == 10:  # yyyy-mm-dd
                 query = query.filter_by(date=date)
-                with_pagination_query = with_pagination_query.filter_by(date=date)
+                with_pagination_query = with_pagination_query.filter_by(date=date).order_by(Car.time.desc())
             elif len(date) == 7:  # yyyy-mm
                 query = query.filter(Car.date.startswith(date))
-                with_pagination_query = with_pagination_query.filter(Car.date.startswith(date))
+                with_pagination_query = with_pagination_query.filter(Car.date.startswith(date)).order_by(Car.date.desc())
             else:
                 raise ValueError
         except ValueError:
@@ -79,7 +79,7 @@ async def get_cars(
                 end_date = start_date + timedelta(days=6)
                 query = query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
                 with_pagination_query = with_pagination_query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"),
-                                                                                      end_date.strftime("%Y-%m-%d")))
+                                                                                      end_date.strftime("%Y-%m-%d"))).order_by(Car.date.desc())
             else:
                 raise ValueError
         except ValueError:
@@ -117,6 +117,8 @@ async def get_cars(
         last_attendances_count = last_attendances_count_future.result()
         top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
+
+    last_attendances = sorted(last_attendances, key=lambda x: (x["attend_date"], x["attend_time"]), reverse=True)
 
     return {
         "general": last_attendances,
