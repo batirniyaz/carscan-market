@@ -173,7 +173,7 @@ async def get_car(
     response = []
 
     sorted_cars_attendances = sorted(
-        cars_attendances,
+        cars_attendances_without_pagination,
         key=lambda x: datetime.strptime(x.time, "%H:%M:%S"),
         reverse=True)
 
@@ -211,7 +211,7 @@ async def get_car(
         if limit is not None:
             special_response = {"cars": [], "overall_count": 0}
 
-            for car in cars_attendances_without_pagination:
+            for car in sorted_cars_attendances:
                 special_response["cars"].append({
                     "time": car.time,
                     "image": f"{BASE_URL}{car.image_url}",
