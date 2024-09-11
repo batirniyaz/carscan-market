@@ -64,7 +64,11 @@ async def get_cars_endpoint(
             description="The date should be in format DD",
             alias="day",
         ),
+        user: User = Depends(current_active_user)
 ):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
     return await get_cars(db=db, page=page, limit=limit, date=day)
 
 
@@ -78,7 +82,11 @@ async def get_cars_endpoint(
             description="The date should be in format MM",
             alias="month",
         ),
+        user: User = Depends(current_active_user)
 ):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
     return await get_cars(db=db, page=page, limit=limit, date=month)
 
 
@@ -92,7 +100,11 @@ async def get_cars_endpoint(
             description="The date should be in format YYYY-WW",
             alias="week",
         ),
+        user: User = Depends(current_active_user)
 ):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
     return await get_cars(db=db, page=page, limit=limit, date=None, week=week)
 
 
@@ -108,7 +120,11 @@ async def get_car_endpoint(
             alias="date",
             example=f"{datetime.now(current_tz).strftime('%Y-%m')}",
         ),
+        user: User = Depends(current_active_user)
 ):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
     if not car_number:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Car number is required")
 
