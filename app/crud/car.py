@@ -96,7 +96,7 @@ async def get_cars(
     cars = [car for car in cars if car.number not in external_car_numbers]
 
     with ThreadPoolExecutor() as executor:
-        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
+        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination, date)
         last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
         attend_count_future = executor.submit(process_attend_count, cars)
 
