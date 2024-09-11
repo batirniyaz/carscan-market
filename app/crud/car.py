@@ -163,6 +163,11 @@ async def get_car(
 
     response = []
 
+    sorted_cars_attendances = sorted(
+        cars_attendances,
+        key=lambda x: datetime.strptime(x.time, "%H:%M:%S"),
+        reverse=True)
+
     first_attendances = {}
     last_attendances = {}
 
@@ -195,7 +200,7 @@ async def get_car(
             )
     elif car_number and len(date) == 10:
 
-        for car in cars_attendances:
+        for car in sorted_cars_attendances:
             response.append(
                 {
                     "time": car.time,
