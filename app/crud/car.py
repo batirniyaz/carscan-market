@@ -65,7 +65,8 @@ async def get_cars(
                 with_pagination_query = with_pagination_query.filter_by(date=date).order_by(Car.time.desc())
             elif len(date) == 7:  # yyyy-mm
                 query = query.filter(Car.date.startswith(date))
-                with_pagination_query = with_pagination_query.filter(Car.date.startswith(date)).order_by(Car.date.desc())
+                with_pagination_query = (with_pagination_query.filter(Car.date.startswith(date))
+                                         .order_by(Car.date.desc(), Car.time.desc()))
             else:
                 raise ValueError
         except ValueError:
@@ -78,8 +79,9 @@ async def get_cars(
                 start_date = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w").date()
                 end_date = start_date + timedelta(days=6)
                 query = query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
-                with_pagination_query = with_pagination_query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"),
-                                                                                      end_date.strftime("%Y-%m-%d"))).order_by(Car.date.desc())
+                with_pagination_query = (with_pagination_query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"),
+                                                                                       end_date.strftime("%Y-%m-%d")))
+                                         .order_by(Car.date.desc(), Car.time.desc()))
             else:
                 raise ValueError
         except ValueError:
@@ -117,8 +119,6 @@ async def get_cars(
         last_attendances_count = last_attendances_count_future.result()
         top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
-
-    last_attendances = sorted(last_attendances, key=lambda x: (x["attend_date"], x["attend_time"]), reverse=True)
 
     return {
         "general": last_attendances,
@@ -262,7 +262,6 @@ async def get_car(
 
 
 async def create_excel_car(db: AsyncSession, date: str, car_number: str):
-
     data = await get_car(db=db, car_number=car_number, date=date, page=None, limit=None)
 
     formated_data = []
@@ -287,6 +286,3 @@ async def create_excel_car(db: AsyncSession, date: str, car_number: str):
 
     else:
         return formated_data
-
-
-
