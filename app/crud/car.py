@@ -115,12 +115,19 @@ async def get_cars(
         top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
 
+    overall_attend_count = 0
+    for car in all_car_response:
+        for key, value in car.items():
+            if key == "attend_count":
+                overall_attend_count += value
+
     return {
         "general": last_attendances,
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
-        "all_cars": all_car_response
+        "all_cars": all_car_response,
+        "overall_count": overall_attend_count
     }
 
 
