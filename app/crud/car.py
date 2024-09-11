@@ -123,6 +123,7 @@ async def get_cars(
 
     return {
         "general": last_attendances,
+        "general_count": len(last_attendances),
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
@@ -204,9 +205,10 @@ async def get_car(
             response.append(
                 {
                     "time": car.time,
-                    "image": f"{BASE_URL}{car.image_url}"
+                    "image": f"{BASE_URL}{car.image_url}",
                 }
             )
+        response.append({"total_count": len(sorted_cars_attendances)})
     elif not car_number and len(date) == 10:
         unique_cars = set()
         for car in cars_attendances:
