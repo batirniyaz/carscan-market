@@ -165,7 +165,7 @@ async def get_car(
         result_without_pagination = await db.execute(stmt_without_pagination)
         cars_attendances_without_pagination = result_without_pagination.scalars().all()
     else:
-        stmt_without_pagination = []
+        cars_attendances_without_pagination = []
 
     if not cars_attendances:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car attendances not found")
