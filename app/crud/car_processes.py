@@ -21,6 +21,14 @@ def process_last_attendances(cars_with_pagination):
     return last_attendances
 
 
+def process_last_attendances_without_pagination(cars):
+    last_attendances_count = 0
+
+    for _ in cars:
+        last_attendances_count += 1
+    return last_attendances_count
+
+
 def process_attend_count(cars):
     unique_cars = set()
     attend_count = {}

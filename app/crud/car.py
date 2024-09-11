@@ -20,7 +20,8 @@ from app.crud.car_processes import (
     process_top10_response,
     process_rounded_time,
     process_rounded_month,
-    process_rounded_weekday
+    process_rounded_weekday,
+    process_last_attendances_without_pagination
 )
 from app.utils.excel_file_utils import create_excel_file
 
@@ -96,6 +97,7 @@ async def get_cars(
 
     with ThreadPoolExecutor() as executor:
         last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
+        last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
         attend_count_future = executor.submit(process_attend_count, cars)
 
         last_attendances = last_attendances_future.result()
@@ -112,23 +114,17 @@ async def get_cars(
         elif week:
             rounded_response_future = executor.submit(process_rounded_weekday, cars)
 
+        last_attendances_count = last_attendances_count_future.result()
         top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
 
-    overall_attend_count = 0
-    for car in all_car_response:
-        for key, value in car.items():
-            if key == "attend_count":
-                overall_attend_count += value
-
     return {
         "general": last_attendances,
-        "general_count": len(last_attendances),
+        "general_count": last_attendances_count,
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
         "all_cars": all_car_response,
-        "overall_count": overall_attend_count
     }
 
 
@@ -140,6 +136,7 @@ async def get_car(
         limit: Optional[int] = 10
 ):
     query = select(Car)
+    stmt_without_pagination = None
 
     if not car_number:
         if len(date) == 10:
@@ -148,16 +145,30 @@ async def get_car(
             stmt = query.filter(Car.date.startswith(date))
     else:
         query = query.filter_by(number=car_number)
-        if limit and page:
-            query = query.offset((page - 1) * limit).limit(limit)
 
         if len(date) == 7:
-            stmt = query.filter(Car.date.startswith(date))
+            query = query.filter(Car.date.startswith(date))
         else:
-            stmt = query.filter_by(date=date)
+            query = query.filter_by(date=date)
+            stmt_without_pagination = query.filter_by(date=date)
+
+        if limit and page:
+            stmt = query.offset((page - 1) * limit).limit(limit)
+        else:
+            stmt = query
 
     result = await db.execute(stmt)
     cars_attendances = result.scalars().all()
+    cars_attendances_without_pagination = None
+
+    if stmt_without_pagination is not None:
+        result_without_pagination = await db.execute(stmt_without_pagination)
+        cars_attendances_without_pagination = result_without_pagination.scalars().all()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error occurred when tried to get cars without pagination"
+        )
 
     if not cars_attendances:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Car attendances not found")
@@ -209,6 +220,8 @@ async def get_car(
                     "image": f"{BASE_URL}{car.image_url}",
                 }
             )
+
+        for car in cars_attendances_without_pagination:
 
             special_response["cars"].append({
                 "time": car.time,
