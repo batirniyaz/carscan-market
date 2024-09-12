@@ -2,6 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.models.exception_nums import Number
+from app.models.car import Car
+from app.config import BASE_URL
 
 
 async def create_exception_num(db: AsyncSession, number: str):
@@ -26,3 +28,45 @@ async def delete_exception_num(db: AsyncSession, car_number: str):
     await db.delete(db_exception_num)
     await db.commit()
     return {"detail": "Number deleted"}
+
+
+async def search(db: AsyncSession):
+    res = await db.execute(select(Car))
+    cars = res.scalars().all()
+
+    unique_numbers = set()
+    unique_cars = set()
+    for car in cars:
+        if car.number not in unique_numbers:
+            unique_numbers.add(car.number)
+
+        if car not in unique_cars:
+            unique_cars.add(car)
+
+    last_attendance = {}
+    for unique_car in unique_cars:
+        if unique_car.number not in last_attendance:
+            last_attendance[unique_car.number] = {"date": unique_car.date, "time": unique_car.time}
+        else:
+            current_last = last_attendance[unique_car.number]
+            if unique_car.date > current_last["date"] or (
+                    unique_car.date == current_last["date"] and unique_car.time > current_last["time"]):
+                last_attendance[unique_car.number] = {
+                    "date": unique_car.date,
+                    "time": unique_car.time,
+                    "image_url": f"{BASE_URL}{unique_car.image_url}"
+                }
+
+    response = []
+    for unique_number in unique_numbers:
+        response.append(
+            {
+                "number": unique_number,
+                "last_attendance": last_attendance[unique_number]
+            }
+        )
+    return response
+
+
+
+
