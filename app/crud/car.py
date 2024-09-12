@@ -190,6 +190,8 @@ async def get_car(
          attend_count_cars,
          attend_count_car) = process_attend_count(cars_attendances)
 
+        print(attend_count_car)
+
         for car in cars_attendances:
             if car.date not in first_attendances:
                 first_attendances[car.date] = car
