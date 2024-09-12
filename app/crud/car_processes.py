@@ -27,13 +27,13 @@ def process_last_attendances_without_pagination(cars):
     return last_attendances_count
 
 
-def process_attend_count(cars):
+def process_attend_count(cars, cars_attendances_without_pagination):
     unique_cars = set()
     attend_count = {}
     attend_count_cars = {}
     attend_count_car = {}
 
-    for car in cars:
+    for car in cars_attendances_without_pagination:
 
         if car.date not in attend_count_car:
             attend_count_car[car.date] = {}
@@ -42,6 +42,8 @@ def process_attend_count(cars):
             attend_count_car[car.date][car.number] = {"count": 0}
 
         attend_count_car[car.date][car.number]["count"] += 1
+
+    for car in cars:
 
         if car.number not in attend_count:
             attend_count[car.number] = 1

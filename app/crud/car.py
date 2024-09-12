@@ -188,7 +188,7 @@ async def get_car(
          unique_cars,
          sorted_cars,
          attend_count_cars,
-         attend_count_car) = process_attend_count(cars_attendances)
+         attend_count_car) = process_attend_count(cars_attendances, cars_attendances_without_pagination)
 
         print(attend_count_car)
 
