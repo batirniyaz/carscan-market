@@ -39,8 +39,6 @@ def process_attend_count(cars, cars_attendances_without_pagination: Optional = N
     attend_count_cars = {}
     attend_count_car = {}
 
-    logging.debug(f"cars_attendances_without_pagination: {cars_attendances_without_pagination}")
-
     if cars_attendances_without_pagination is not None:
         for car in cars_attendances_without_pagination:
 
@@ -69,8 +67,6 @@ def process_attend_count(cars, cars_attendances_without_pagination: Optional = N
 
     sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
 
-    logging.debug(f"attend_count_car: {attend_count_car}")
-
     return attend_count, unique_cars, sorted_cars, attend_count_cars, attend_count_car
 
 
@@ -92,21 +88,7 @@ def process_top10_response(sorted_cars, attend_count):
             if len(top10response) == 10:
                 break
 
-    all_car_response = []
-    all_cars = set()
-    for car in sorted_cars:
-        if car.number not in all_cars:
-            all_car_response.append({
-                "attend_id": car.id,
-                "car_number": car.number,
-                "attend_date": car.date,
-                "attend_time": car.time,
-                "image_url": f"{BASE_URL}{car.image_url}",
-                "attend_count": attend_count[car.number]
-            })
-            all_cars.add(car.number)
-
-    return top10response, all_car_response
+    return top10response
 
 
 def process_rounded_time(cars):
