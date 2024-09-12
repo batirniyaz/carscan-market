@@ -175,8 +175,6 @@ async def get_car(
 
     response = []
 
-    logging.debug(f"cars_attendances: {cars_attendances_without_pagination}")
-
     sorted_cars_attendances = sorted(
         cars_attendances_without_pagination,
         key=lambda x: datetime.strptime(x.time, "%H:%M:%S"),
@@ -193,9 +191,7 @@ async def get_car(
          attend_count_cars,
          attend_count_car) = process_attend_count(cars_attendances, cars_attendances_without_pagination)
 
-        logging.debug(f"sorted_car: {sorted_cars_attendances}")
-
-        for car in cars_attendances:
+        for car in cars_attendances_without_pagination:
             if car.date not in first_attendances:
                 first_attendances[car.date] = car
             elif car.time < first_attendances[car.date].time:
