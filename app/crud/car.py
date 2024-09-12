@@ -200,7 +200,11 @@ async def get_car(
             elif car.time > last_attendances[car.date].time:
                 last_attendances[car.date] = car
 
-        for date in first_attendances:
+        sorted_first_attendances = dict(
+            sorted(first_attendances.items(), key=lambda item: item[0], reverse=True)
+        )
+
+        for date in sorted_first_attendances:
             response.append(
                 {
                     "date": date,
