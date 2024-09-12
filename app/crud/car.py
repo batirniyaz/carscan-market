@@ -98,12 +98,12 @@ async def get_cars(
     cars = [car for car in cars if car.number not in external_car_numbers]
 
     with ThreadPoolExecutor() as executor:
-        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination, date)
+        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
         last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
         attend_count_future = executor.submit(process_attend_count, cars)
 
         last_attendances = last_attendances_future.result()
-        attend_count, unique_cars, sorted_cars, attend_count_cars = attend_count_future.result()
+        attend_count, unique_cars, sorted_cars, attend_count_cars, attend_count_car = attend_count_future.result()
 
         top10response_future = executor.submit(process_top10_response, sorted_cars, attend_count)
 
@@ -184,7 +184,11 @@ async def get_car(
 
     if car_number and len(date) == 7:
 
-        attend_count, unique_cars, sorted_cars, attend_count_cars = process_attend_count(cars_attendances)
+        (attend_count,
+         unique_cars,
+         sorted_cars,
+         attend_count_cars,
+         attend_count_car) = process_attend_count(cars_attendances)
 
         for car in cars_attendances:
             if car.date not in first_attendances:
@@ -206,7 +210,7 @@ async def get_car(
                     "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
                     "last_time": last_attendances[date].time,
                     "last_image": f"{BASE_URL}{last_attendances[date].image_url}",
-                    "overall_count": attend_count_cars[date]
+                    "overall_count": attend_count_car[date][car_number]["count"]
                 }
             )
     elif car_number and len(date) == 10:
