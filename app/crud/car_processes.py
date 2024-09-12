@@ -1,8 +1,13 @@
+import logging
 from datetime import datetime
 from typing import Optional
+import logging
 
 from app.config import BASE_URL
 from app.utils.time_utils import round_time_slot
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def process_last_attendances(cars_with_pagination):
@@ -61,6 +66,8 @@ def process_attend_count(cars, cars_attendances_without_pagination: Optional = N
             unique_cars.add(car.number)
 
     sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
+
+    logging.debug(f"attend_count_car: {attend_count_car}")
 
     return attend_count, unique_cars, sorted_cars, attend_count_cars, attend_count_car
 
