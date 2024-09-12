@@ -38,10 +38,11 @@ async def get_daily_report(db: AsyncSession, date: str):
 
 async def store_daily_report():
     current_date = datetime.now(current_tz).strftime("%Y-%m-%d")
+    date= '2024-09-10'
 
     async for session in get_async_session():
         async with session.begin():
-            response = await get_cars(db=session, page=1, limit=10, date=current_date)
+            response = await get_cars(db=session, page=1, limit=10, date=date)
 
             top10 = response["top10"]
             total_cars = response["total_cars"]
@@ -71,7 +72,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule_time = datetime.now(current_tz).replace(hour=12, minute=49, second=0, microsecond=0)
+    schedule_time = datetime.now(current_tz).replace(hour=12, minute=55, second=0, microsecond=0)
     schedule.every().day.at(schedule_time.strftime("%H:%M")).do(lambda: asyncio.create_task(store_daily_report()))
 
 
