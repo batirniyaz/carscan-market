@@ -1,3 +1,4 @@
+import pytz
 import schedule
 import asyncio
 
@@ -30,7 +31,6 @@ async def define_date_type(db: AsyncSession, date: str):
 
 
 async def get_daily_report(db: AsyncSession, date: str):
-
     daily_report = await define_date_type(db, date)
 
     return daily_report
@@ -71,11 +71,17 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule.every().day.at("12:15").do(lambda: asyncio.create_task(store_daily_report()))
+    schedule.every().day.at("12:30").do(lambda: asyncio.create_task(store_daily_report()))
+
+    async def run_scheduler():
+        while True:
+            schedule.run_pending()
+            await asyncio.sleep(1)
+
+    asyncio.create_task(run_scheduler())
 
 
 async def create_excel_report(db: AsyncSession, date: str):
-
     daily_report = await define_date_type(db, date)
 
     if len(date) == 10:
@@ -119,13 +125,3 @@ async def create_excel_report(db: AsyncSession, date: str):
         excel_report = await create_excel_file(formated_general_data, file_name=f"monthly_report_{date}")
 
         return excel_report
-
-
-async def run_scheduler():
-    while True:
-        schedule.run_pending()
-        await asyncio.sleep(1)
-
-
-schedule_daily_report()
-asyncio.create_task(run_scheduler())
