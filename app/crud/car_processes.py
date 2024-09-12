@@ -4,7 +4,7 @@ from app.config import BASE_URL
 from app.utils.time_utils import round_time_slot
 
 
-def process_last_attendances(cars_with_pagination, date):
+def process_last_attendances(cars_with_pagination):
     last_attendances = []
 
     for car in cars_with_pagination:
@@ -31,8 +31,17 @@ def process_attend_count(cars):
     unique_cars = set()
     attend_count = {}
     attend_count_cars = {}
+    attend_count_car = {}
 
     for car in cars:
+
+        if car.date not in attend_count_car:
+            attend_count_car[car.date] = {}
+
+        if car.number not in attend_count_car[car.date]:
+            attend_count_car[car.date][car.number] = {"count": 0}
+
+        attend_count_car[car.date][car.number]["count"] += 1
 
         if car.number not in attend_count:
             attend_count[car.number] = 1
@@ -49,7 +58,7 @@ def process_attend_count(cars):
 
     sorted_cars = sorted(cars, key=lambda x: attend_count[x.number], reverse=True)
 
-    return attend_count, unique_cars, sorted_cars, attend_count_cars
+    return attend_count, unique_cars, sorted_cars, attend_count_cars, attend_count_car
 
 
 def process_top10_response(sorted_cars, attend_count):
