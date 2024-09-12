@@ -38,7 +38,7 @@ async def get_daily_report(db: AsyncSession, date: str):
 
 async def store_daily_report():
     current_date = datetime.now(current_tz).strftime("%Y-%m-%d")
-    date = '2024-09-10'
+    date = '2024-09-11'
 
     async for session in get_async_session():
         async with session.begin():
@@ -72,7 +72,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule_time = datetime.now(current_tz).replace(hour=12, minute=59, second=0, microsecond=0)
+    schedule_time = datetime.now(current_tz).replace(hour=13, minute=4, second=0, microsecond=0)
     schedule.every().day.at(schedule_time.strftime("%H:%M")).do(lambda: asyncio.create_task(store_daily_report()))
 
 
