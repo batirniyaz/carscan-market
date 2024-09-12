@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from app.config import BASE_URL
 from app.utils.time_utils import round_time_slot
@@ -27,21 +28,22 @@ def process_last_attendances_without_pagination(cars):
     return last_attendances_count
 
 
-def process_attend_count(cars, cars_attendances_without_pagination):
+def process_attend_count(cars, cars_attendances_without_pagination: Optional = None):
     unique_cars = set()
     attend_count = {}
     attend_count_cars = {}
     attend_count_car = {}
 
-    for car in cars_attendances_without_pagination:
+    if cars_attendances_without_pagination is not None:
+        for car in cars_attendances_without_pagination:
 
-        if car.date not in attend_count_car:
-            attend_count_car[car.date] = {}
+            if car.date not in attend_count_car:
+                attend_count_car[car.date] = {}
 
-        if car.number not in attend_count_car[car.date]:
-            attend_count_car[car.date][car.number] = {"count": 0}
+            if car.number not in attend_count_car[car.date]:
+                attend_count_car[car.date][car.number] = {"count": 0}
 
-        attend_count_car[car.date][car.number]["count"] += 1
+            attend_count_car[car.date][car.number]["count"] += 1
 
     for car in cars:
 
