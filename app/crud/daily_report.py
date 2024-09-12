@@ -24,7 +24,7 @@ async def define_date_type(db: AsyncSession, date: str):
         result = await db.execute(query.filter_by(date=date))
         daily_report = result.scalars().first()
     else:
-        result = await db.execute(query.filter(DailyReport.date.startswith(date)))
+        result = await db.execute(query.filter(DailyReport.date.startswith(date)).order_by(DailyReport.date.desc()))
         daily_report = result.scalars().all()
 
     return daily_report if daily_report else []
