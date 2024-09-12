@@ -145,6 +145,7 @@ async def get_car(
             stmt = query.filter_by(date=date)
         else:
             stmt = query.filter(Car.date.startswith(date))
+            stmt_without_pagination = query.filter(Car.date.startswith(date))
     else:
         query = query.filter_by(number=car_number)
 
@@ -161,7 +162,6 @@ async def get_car(
 
     result = await db.execute(stmt)
     cars_attendances = result.scalars().all()
-    cars_attendances_without_pagination = None
 
     if stmt_without_pagination is not None:
         result_without_pagination = await db.execute(stmt_without_pagination)
@@ -212,7 +212,7 @@ async def get_car(
                     "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
                     "last_time": last_attendances[date].time,
                     "last_image": f"{BASE_URL}{last_attendances[date].image_url}",
-                    "overall_count": attend_count_car[date][car_number]["count"]
+                    "overall_count": attend_count_car[date][car_number]["count"] if date in attend_count_car else 0
                 }
             )
     elif car_number and len(date) == 10:
