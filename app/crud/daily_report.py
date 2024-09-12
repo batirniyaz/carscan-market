@@ -71,7 +71,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule.every().day.at("12:12").do(lambda: asyncio.create_task(store_daily_report()))
+    schedule.every().day.at("12:13").do(lambda: asyncio.create_task(store_daily_report()))
 
 
 async def create_excel_report(db: AsyncSession, date: str):
