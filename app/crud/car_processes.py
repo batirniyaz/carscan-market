@@ -39,6 +39,8 @@ def process_attend_count(cars, cars_attendances_without_pagination: Optional = N
     attend_count_cars = {}
     attend_count_car = {}
 
+    logging.debug(f"cars_attendances_without_pagination: {cars_attendances_without_pagination}")
+
     if cars_attendances_without_pagination is not None:
         for car in cars_attendances_without_pagination:
 

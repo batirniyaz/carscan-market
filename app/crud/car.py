@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -145,12 +146,12 @@ async def get_car(
             stmt = query.filter_by(date=date)
         else:
             stmt = query.filter(Car.date.startswith(date))
-            stmt_without_pagination = query.filter(Car.date.startswith(date))
     else:
         query = query.filter_by(number=car_number)
 
         if len(date) == 7:
             query = query.filter(Car.date.startswith(date))
+            stmt_without_pagination = query.filter(Car.date.startswith(date))
         else:
             query = query.filter_by(date=date)
             stmt_without_pagination = query.filter_by(date=date)
@@ -174,6 +175,8 @@ async def get_car(
 
     response = []
 
+    logging.debug(f"cars_attendances: {cars_attendances_without_pagination}")
+
     sorted_cars_attendances = sorted(
         cars_attendances_without_pagination,
         key=lambda x: datetime.strptime(x.time, "%H:%M:%S"),
@@ -190,7 +193,7 @@ async def get_car(
          attend_count_cars,
          attend_count_car) = process_attend_count(cars_attendances, cars_attendances_without_pagination)
 
-        print(attend_count_car)
+        logging.debug(f"sorted_car: {sorted_cars_attendances}")
 
         for car in cars_attendances:
             if car.date not in first_attendances:
@@ -218,6 +221,7 @@ async def get_car(
     elif car_number and len(date) == 10:
         if limit is not None:
             special_response = {"cars": [], "overall_count": 0}
+            logging.debug(f"sorted_car: {sorted_cars_attendances}")
 
             for car in sorted_cars_attendances:
                 special_response["cars"].append({
