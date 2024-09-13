@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.base_config import current_active_user
 from app.auth.database import get_async_session, User
 from app.config import current_tz
-from app.crud.unknown_car import create_unknown_car
+from app.crud.unknown_car import create_unknown_car, get_unknown_cars
 from app.schemas.unknown_car import UnknownCarResponse
 from fastapi import APIRouter, Depends, Query, File, UploadFile, HTTPException, status
 
@@ -48,3 +48,24 @@ async def create_unknown_car_endpoint(
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/")
+async def get_unknown_cars_endpoint(
+        db: AsyncSession = Depends(get_async_session),
+        date: str = Query(
+            ...,
+            description="The date of the car",
+            alias="car-date",
+            example=f"{datetime.now(current_tz).strftime('%Y-%m')}"),
+        page: int = Query(1, description="The page number", alias="page"),
+        limit: int = Query(10, description="The number of items per page", alias="limit"),
+        user: User = Depends(current_active_user)
+    ):
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
+    return await get_unknown_cars(db=db, date=date, page=page, limit=limit)
+
+
