@@ -275,18 +275,36 @@ async def create_excel_car(db: AsyncSession, date: str, car_number: str):
     formated_data = []
     if data:
         if len(date) == 10:
+            total = 0
             for car in data:
                 formated_data.append({
                     "time": car["time"],
-                    "image": car["image"]
+                    "image": car["image"],
                 })
+                total += 1
+
+            formated_data.append({"time": "", "image": ""})
+
+            formated_data.append({
+                "time": car_number,
+                "image": f"{total} days",
+            })
 
         else:
+            average_come = 0
             for car in data:
                 formated_data.append({
                     "date": car["date"],
                     "overall_count": car["overall_count"],
                 })
+                average_come += car["overall_count"]
+
+            formated_data.append({"date": "", "overall_count": ""})
+
+            formated_data.append({
+                "date": car_number,
+                "overall_count": f"average {average_come / len(data)}",
+            })
 
         excel_car = await create_excel_file(formated_data, file_name=f"car_{car_number}_date_{date}")
 
