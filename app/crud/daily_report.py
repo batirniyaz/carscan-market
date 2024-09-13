@@ -38,10 +38,11 @@ async def get_daily_report(db: AsyncSession, date: str):
 
 async def store_daily_report():
     current_date = datetime.now(current_tz).strftime("%Y-%m-%d")
+    date = '2024-09-11'
 
     async for session in get_async_session():
         async with session.begin():
-            response = await get_cars(db=session, page=1, limit=10, date=current_date)
+            response = await get_cars(db=session, page=1, limit=10, date=date)
 
             top10 = response["top10"]
             total_cars = response["total_cars"]
@@ -62,7 +63,7 @@ async def store_daily_report():
                         cars_attendances_count += car["attend_count"]
 
             daily_report = DailyReport(
-                date=current_date,
+                date=date,
                 top10=top10_cars,
                 general=general_cars,
                 general_attendances_count=cars_attendances_count,
