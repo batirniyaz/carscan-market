@@ -56,7 +56,7 @@ async def get_unknown_cars_endpoint(
         date: str = Query(
             ...,
             description="The date of the car",
-            alias="car-date",
+            alias="car_date",
             example=f"{datetime.now(current_tz).strftime('%Y-%m')}"),
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of items per page", alias="limit"),
