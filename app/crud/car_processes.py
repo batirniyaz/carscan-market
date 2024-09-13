@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-import logging
 
 from app.config import BASE_URL
 from app.utils.time_utils import round_time_slot
