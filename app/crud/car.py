@@ -117,7 +117,7 @@ async def get_cars(
             rounded_response_future = executor.submit(process_rounded_weekday, cars)
 
         last_attendances_count = last_attendances_count_future.result()
-        top10response = top10response_future.result()
+        top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
 
     return {
@@ -126,6 +126,7 @@ async def get_cars(
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
+        "all_cars": all_car_response,
     }
 
 
