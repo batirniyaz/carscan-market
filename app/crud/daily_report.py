@@ -45,6 +45,7 @@ async def store_daily_report():
             top10 = response["top10"]
             total_cars = response["total_cars"]
             all_cars = response["all_cars"]
+            general_attendances_count = response["general_count"]
 
             top10_cars = []
             for car in top10:
@@ -62,6 +63,7 @@ async def store_daily_report():
                 date=current_date,
                 top10=top10_cars,
                 general=general_cars,
+                general_attendances_count=general_attendances_count,
                 general_count=len(general_cars),
                 overall_count=total_cars
             )
