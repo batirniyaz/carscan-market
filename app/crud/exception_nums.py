@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.models.exception_nums import Number
+from app.models.exception_nums import Number, StartEndTime
 from app.models.car import Car
 from app.config import BASE_URL
 
@@ -68,5 +68,30 @@ async def search(db: AsyncSession):
     return response
 
 
+async def create_start_end_time(db: AsyncSession, start_time: str, end_time: str):
+    db_start_end_time = StartEndTime(start_time=start_time, end_time=end_time)
+    db.add(db_start_end_time)
+    await db.commit()
+    await db.refresh(db_start_end_time)
+
+    return db_start_end_time
+
+
+async def get_start_end_time(db: AsyncSession):
+    res = await db.execute(select(StartEndTime).limit(1))
+    return res.scalar_one_or_none()
+
+
+async def update_start_end_time(db: AsyncSession, start_time: str, end_time: str):
+    res = await db.execute(select(StartEndTime).limit(1))
+    db_start_end_time = res.scalar_one_or_none()
+    if not db_start_end_time:
+        return {"detail": "Time not found"}
+
+    db_start_end_time.start_time = start_time
+    db_start_end_time.end_time = end_time
+    await db.commit()
+
+    return db_start_end_time
 
 
