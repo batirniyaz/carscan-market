@@ -14,6 +14,7 @@ from app.crud.car import get_cars, get_car
 from app.utils.excel_file_utils import create_excel_file
 
 from app.config import START_TIME, END_TIME
+from app.models.car import Car
 
 
 async def define_date_type(db: AsyncSession, date: str):
@@ -45,7 +46,6 @@ async def store_daily_report():
             top10 = response["top10"]
             total_cars = response["total_cars"]
             all_cars = response["all_cars"]
-            general_attendances_count = response["general_count"]
 
             top10_cars = []
             for car in top10:
@@ -53,17 +53,19 @@ async def store_daily_report():
                     if START_TIME <= car["attend_time"] <= END_TIME:
                         top10_cars.append(car)
 
+            cars_attendances_count = 0
             general_cars = []
             for car in all_cars:
                 if car["attend_count"] > 2:
                     if START_TIME <= car["attend_time"] <= END_TIME:
                         general_cars.append(car)
+                        cars_attendances_count += car["attend_count"]
 
             daily_report = DailyReport(
                 date=current_date,
                 top10=top10_cars,
                 general=general_cars,
-                general_attendances_count=general_attendances_count,
+                general_attendances_count=cars_attendances_count,
                 general_count=len(general_cars),
                 overall_count=total_cars
             )
@@ -72,7 +74,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule_time = datetime.now(current_tz).replace(hour=23, minute=30, second=0, microsecond=0)
+    schedule_time = datetime.now(current_tz).replace(hour=15, minute=42, second=0, microsecond=0)
     schedule.every().day.at(schedule_time.strftime("%H:%M")).do(lambda: asyncio.create_task(store_daily_report()))
 
 
