@@ -13,8 +13,7 @@ from app.models.daily_report import DailyReport
 from app.crud.car import get_cars, get_car
 from app.utils.excel_file_utils import create_excel_file
 
-# from app.config import START_TIME, END_TIME
-from app.models.car import Car
+from app.models.exception_nums import StartEndTime
 
 
 async def define_date_type(db: AsyncSession, date: str):
@@ -42,6 +41,12 @@ async def store_daily_report():
     async for session in get_async_session():
         async with session.begin():
             response = await get_cars(db=session, page=1, limit=10, date=current_date)
+
+            start_and_end_res = await session.execute(select(StartEndTime).limit(1))
+            start_and_end = start_and_end_res.scalars().first()
+
+            START_TIME = start_and_end.start_time
+            END_TIME = start_and_end.end_time
 
             top10 = response["top10"]
             total_cars = response["total_cars"]
