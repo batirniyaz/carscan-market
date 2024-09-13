@@ -31,7 +31,7 @@ async def get_unknown_cars(db: AsyncSession, date: str, page: int = 1, limit: in
     if len(date) == 10:
         query = query.filter_by(date=date).order_by(UnknownCar.time.desc())
     else:
-        query = query.filter(UnknownCar.date.startswith(date)).order_by(UnknownCar.date.desc())
+        query = query.filter(UnknownCar.date.startswith(date)).order_by(UnknownCar.date.desc(), UnknownCar.time.desc())
 
     res = await db.execute(query.offset((page - 1) * limit).limit(limit))
     res_without_pagination = await db.execute(query)
