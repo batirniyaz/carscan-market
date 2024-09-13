@@ -15,7 +15,4 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 BASE_URL = os.getenv("BASE_URL")
 
-START_TIME = '07:00:00'
-END_TIME = '19:00:00'
-
 current_tz = pytz.timezone("Asia/Samarkand")
