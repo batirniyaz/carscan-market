@@ -74,7 +74,7 @@ async def store_daily_report():
 
 
 def schedule_daily_report():
-    schedule_time = datetime.now(current_tz).replace(hour=15, minute=2, second=0, microsecond=0)
+    schedule_time = datetime.now(current_tz).replace(hour=23, minute=30, second=0, microsecond=0)
     schedule.every().day.at(schedule_time.strftime("%H:%M")).do(lambda: asyncio.create_task(store_daily_report()))
 
 
