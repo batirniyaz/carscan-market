@@ -134,11 +134,11 @@ async def get_cars(
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
         "all_cars": all_car_response,
-        "timing": {
-            "query_duration": result_duration,
-            "external_query_duration": external_res_duration,
-            "attendance_duration": attendance_duration,
-        }
+        # "timing": {
+        #     "query_duration": result_duration,
+        #     "external_query_duration": external_res_duration,
+        #     "attendance_duration": attendance_duration,
+        # }
     }
 
 
