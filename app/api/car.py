@@ -104,7 +104,7 @@ async def get_cars_endpoint(
         f"total;dur={total_duration:.2f}"
     )
 
-    return await cars_data
+    return cars_data
 
 
 @router.get("/week")
