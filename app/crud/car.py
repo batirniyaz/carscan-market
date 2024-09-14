@@ -91,10 +91,9 @@ async def get_cars(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid week format")
 
-    result_start_time = time.time()
     result = await db.execute(query)
     cars = result.scalars().all()
-    result_duration = (time.time() - result_start_time) * 1000
+    result_duration = (time.time() - query_start_time) * 1000
 
     with_pagination_result = await db.execute(with_pagination_query)
     cars_with_pagination = with_pagination_result.scalars().all()
