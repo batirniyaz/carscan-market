@@ -137,18 +137,20 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars(db=db, page=page, limit=limit, date=None, week=week)
+    # cars_data = await get_cars(db=db, page=page, limit=limit, date=wee)
 
     total_duration = (time.time() - start_time) * 1000
 
-    response.headers["Server-Timing"] = (
-        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
-        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
-        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
-        f"total;dur={total_duration:.2f}"
-    )
+    # response.headers["Server-Timing"] = (
+    #     f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
+    #     f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
+    #     f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
+    #     f"total;dur={total_duration:.2f}"
+    # )
+    #
+    # return cars_data
 
-    return cars_data
+    return await get_cars(db=db, page=page, limit=limit, date=None, week=week)
 
 
 @router.get("/{car_number}")
