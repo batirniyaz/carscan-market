@@ -98,10 +98,9 @@ async def get_cars_endpoint(
     total_duration = (time.time() - start_time) * 1000
 
     response.headers["Server-Timing"] = (
-        f"cars;dur={cars_duration:.2f}, "
-        f"external;dur={cars_data['timing']['external_query_duration']:.2f}, "
-        f"attendance;dur={cars_data['timing']['attendance_duration']:.2f}, "
-        f"car calculations;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
+        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
+        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
