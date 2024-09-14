@@ -101,6 +101,7 @@ async def get_cars_endpoint(
         f"cars;dur={cars_duration:.2f}, "
         f"external;dur={cars_data['timing']['external_query_duration']:.2f}, "
         f"attendance;dur={cars_data['timing']['attendance_duration']:.2f}, "
+        f"car calculations;dur={cars_data['timing']['query_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
