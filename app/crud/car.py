@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -52,11 +53,14 @@ async def get_cars(
         date: str = None,
         week: str = None
 ):
+    query_start_time = time.time()
     query = select(Car)
     with_pagination_query = query.offset((page - 1) * limit).limit(limit)
 
+    external_res_start_time = time.time()
     external_res = await db.execute(select(Number))
     external_cars = external_res.scalars().all()
+    external_res_duration = (time.time() - external_res_start_time) * 1000
 
     if date:
         try:
@@ -87,8 +91,10 @@ async def get_cars(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid week format")
 
+    result_start_time = time.time()
     result = await db.execute(query)
     cars = result.scalars().all()
+    result_duration = (time.time() - result_start_time) * 1000
 
     with_pagination_result = await db.execute(with_pagination_query)
     cars_with_pagination = with_pagination_result.scalars().all()
@@ -97,6 +103,7 @@ async def get_cars(
     cars_with_pagination = [car for car in cars_with_pagination if car.number not in external_car_numbers]
     cars = [car for car in cars if car.number not in external_car_numbers]
 
+    attendance_start_time = time.time()
     with ThreadPoolExecutor() as executor:
         last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
         last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
@@ -119,6 +126,7 @@ async def get_cars(
         last_attendances_count = last_attendances_count_future.result()
         top10response, all_car_response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
+    attendance_duration = (time.time() - attendance_start_time) * 1000
 
     return {
         "general": last_attendances,
@@ -127,6 +135,11 @@ async def get_cars(
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
         "all_cars": all_car_response,
+        "timing": {
+            "query_duration": result_duration,
+            "external_query_duration": external_res_duration,
+            "attendance_duration": attendance_duration,
+        }
     }
 
 
