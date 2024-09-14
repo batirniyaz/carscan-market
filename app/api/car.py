@@ -57,6 +57,7 @@ async def create_car_endpoint(
 
 @router.get("/day")
 async def get_cars_endpoint(
+        response: Response,
         db: AsyncSession = Depends(get_async_session),
         page: int = Query(1, description="The page number", alias="page"),
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
@@ -70,7 +71,20 @@ async def get_cars_endpoint(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
-    return await get_cars(db=db, page=page, limit=limit, date=day)
+    start_time = time.time()
+
+    cars_data = await get_cars(db=db, page=page, limit=limit, date=day)
+
+    total_duration = (time.time() - start_time) * 1000
+
+    response.headers["Server-Timing"] = (
+        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
+        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
+        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"total;dur={total_duration:.2f}"
+    )
+
+    return cars_data
 
 
 @router.get("/month")
@@ -91,9 +105,7 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_start_time = time.time()
     cars_data = await get_cars(db=db, page=page, limit=limit, date=month)
-    cars_duration = (time.time() - cars_start_time) * 1000
 
     total_duration = (time.time() - start_time) * 1000
 
