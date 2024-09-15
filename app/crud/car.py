@@ -130,7 +130,7 @@ async def get_cars(
     attendance_duration = (time.time() - attendance_start_time) * 1000
 
     start_test = time.time()
-    test_cars = await db.execute(select(Car))
+    test_cars = await db.execute(select(Car).filter(Car.date.startswith(date)))
     test_cars = test_cars.scalars().all()
     end_test = time.time()
 
