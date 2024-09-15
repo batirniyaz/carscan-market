@@ -55,3 +55,4 @@ pytz==2024.1
 pandas==2.2.2
 schedule==1.2.2
 openpyxl==3.1.5
+aiocache==0.12.2
