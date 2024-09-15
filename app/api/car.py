@@ -90,6 +90,7 @@ async def get_cars_endpoint(
 
 
 @router.get("/month")
+@cached(ttl=60)
 async def get_cars_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
@@ -122,6 +123,7 @@ async def get_cars_endpoint(
 
 
 @router.get("/week")
+@cached(ttl=60)
 async def get_cars_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
@@ -154,7 +156,9 @@ async def get_cars_endpoint(
 
 
 @router.get("/{car_number}")
+@cached(ttl=60)
 async def get_car_endpoint(
+        response: Response,
         car_number: str,
         db: AsyncSession = Depends(get_async_session),
         page: int = Query(1, description="The page number", alias="page"),
@@ -176,4 +180,12 @@ async def get_car_endpoint(
     if not page and limit:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Page and limit are required")
 
-    return await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
+    start_time = time.time()
+    car_data = await get_car(db=db, page=page, limit=limit, car_number=car_number, date=date)
+    total_duration = (time.time() - start_time) * 1000
+
+    response.headers["Server-Timing"] = (
+        f"total;dur={total_duration:.2f}"
+    )
+
+    return car_data

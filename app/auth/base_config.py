@@ -3,7 +3,7 @@ from fastapi_users.authentication import BearerTransport, JWTStrategy, Authentic
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from fastapi.responses import JSONResponse
 from app.auth.schemas import PhoneNumberLoginRequest
 from app.auth.auth_utils import verify_password, create_access_token
 
@@ -46,6 +46,19 @@ router.include_router(
     prefix="/auth",
     tags=["auth"],
 )
+
+@router.delete("/auth/jwt/delete")
+async def delete_user(db: AsyncSession = Depends(get_async_session), user: User = Depends(current_active_user)):
+    res = await db.execute(select(User).filter_by(id=user.id))
+    db_user = res.scalars().first()
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
+    await db.delete(db_user)
+    await db.commit()
+
+    response = JSONResponse(content={"detail": "User deleted"})
+    response.delete_cookie(key="Authorization")
+    return response
 
 
 @router.get("/authenticated-route")
