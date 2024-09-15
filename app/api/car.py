@@ -137,7 +137,7 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars(db=db, page=page, limit=limit, date=week)
+    cars_data = await get_cars(db=db, page=page, limit=limit, date=None, week=week)
 
     total_duration = (time.time() - start_time) * 1000
 
