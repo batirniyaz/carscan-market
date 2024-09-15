@@ -129,6 +129,11 @@ async def get_cars(
         rounded_response = rounded_response_future.result() if rounded_response_future else []
     attendance_duration = (time.time() - attendance_start_time) * 1000
 
+    start_test = time.time()
+    test_cars = await db.execute(select(Car))
+    test_cars = test_cars.scalars().all()
+    end_test = time.time()
+
     return {
         "general": last_attendances,
         "general_count": last_attendances_count,
@@ -140,6 +145,7 @@ async def get_cars(
             "query_duration": result_duration,
             "external_query_duration": external_res_duration,
             "attendance_duration": attendance_duration,
+            "test_duration": (end_test - start_test) * 1000
         }
     }
 
