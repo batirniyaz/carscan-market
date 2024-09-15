@@ -6,11 +6,13 @@ from datetime import datetime
 from app.config import current_tz
 from app.crud.daily_report import get_daily_report
 from app.auth.base_config import current_active_user
+from aiocache import cached
 
 router = APIRouter()
 
 
 @router.get("/")
+@cached(ttl=60)
 async def get_daily_report_endpoint(
         db: AsyncSession = Depends(get_async_session),
         date: str = Query(

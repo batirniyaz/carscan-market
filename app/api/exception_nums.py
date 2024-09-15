@@ -13,6 +13,7 @@ from app.crud.exception_nums import (
 )
 from app.schemas.exception_nums import NumbersResponse
 from app.auth.base_config import current_active_user
+from aiocache import cached
 
 router = APIRouter()
 router_start = APIRouter()
@@ -31,6 +32,7 @@ async def create_exception_num_endpoint(
 
 
 @router.get("/", response_model=[])
+@cached(ttl=60)
 async def get_exception_nums_endpoint(
         db: AsyncSession = Depends(get_async_session),
         user: User = Depends(current_active_user)
@@ -42,6 +44,7 @@ async def get_exception_nums_endpoint(
 
 
 @router.get("/search")
+@cached(ttl=60)
 async def search_endpoint(
         db: AsyncSession = Depends(get_async_session),
         user: User = Depends(current_active_user)

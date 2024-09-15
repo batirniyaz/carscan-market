@@ -8,6 +8,7 @@ from app.config import current_tz
 from app.crud.unknown_car import create_unknown_car, get_unknown_cars
 from app.schemas.unknown_car import UnknownCarResponse
 from fastapi import APIRouter, Depends, Query, File, UploadFile, HTTPException, status
+from aiocache import cached
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ async def create_unknown_car_endpoint(
 
 
 @router.get("/")
+@cached(ttl=60)
 async def get_unknown_cars_endpoint(
         db: AsyncSession = Depends(get_async_session),
         date: str = Query(
