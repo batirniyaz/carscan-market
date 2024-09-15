@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud.car import create_car, get_cars, get_car
 
 from app.auth.base_config import current_active_user
+from aiocache import cached
 
 router = APIRouter()
 
@@ -56,6 +57,7 @@ async def create_car_endpoint(
 
 
 @router.get("/day")
+@cached(ttl=60)
 async def get_cars_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
