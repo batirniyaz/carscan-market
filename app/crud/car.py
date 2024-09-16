@@ -129,6 +129,7 @@ async def get_cars(
         rounded_response = rounded_response_future.result() if rounded_response_future else []
     attendance_duration = (time.time() - attendance_start_time) * 1000
 
+    test_duration = None
     if date:
         start_test = time.time()
         test_cars = await db.execute(select(Car).filter(Car.date.startswith(date)).offset((page - 1) * limit).limit(limit))
