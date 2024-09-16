@@ -129,10 +129,12 @@ async def get_cars(
         rounded_response = rounded_response_future.result() if rounded_response_future else []
     attendance_duration = (time.time() - attendance_start_time) * 1000
 
-    start_test = time.time()
-    test_cars = await db.execute(select(Car).filter(Car.date.startswith(date)).offset((page - 1) * limit).limit(limit))
-    test_cars = test_cars.scalars().all()
-    end_test = time.time()
+    if date:
+        start_test = time.time()
+        test_cars = await db.execute(select(Car).filter(Car.date.startswith(date)).offset((page - 1) * limit).limit(limit))
+        test_cars = test_cars.scalars().all()
+        end_test = time.time()
+        test_duration = (end_test - start_test) * 1000
 
     return {
         "general": last_attendances,
@@ -145,7 +147,7 @@ async def get_cars(
             "query_duration": result_duration,
             "external_query_duration": external_res_duration,
             "attendance_duration": attendance_duration,
-            "test_duration": (end_test - start_test) * 1000
+            "test_duration": test_duration if test_duration else 0
         }
     }
 
