@@ -14,7 +14,7 @@ from app.crud.car import get_cars, get_car
 from app.utils.excel_file_utils import create_excel_file
 
 from app.models.exception_nums import StartEndTime
-from models.car import Car
+from app.models.car import Car
 
 
 async def define_date_type(db: AsyncSession, date: str):
