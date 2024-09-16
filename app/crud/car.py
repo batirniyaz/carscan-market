@@ -125,7 +125,7 @@ async def get_cars(
             rounded_response_future = executor.submit(process_rounded_weekday, cars)
 
         last_attendances_count = last_attendances_count_future.result()
-        top10response, all_car_response = top10response_future.result()
+        top10response = top10response_future.result()
         rounded_response = rounded_response_future.result() if rounded_response_future else []
     attendance_duration = (time.time() - attendance_start_time) * 1000
 
@@ -143,7 +143,6 @@ async def get_cars(
         "top10": top10response,
         "total_cars": len(unique_cars),
         "graphic": rounded_response if rounded_response else [],
-        "all_cars": all_car_response,
         "timing": {
             "query_duration": result_duration,
             "external_query_duration": external_res_duration,

@@ -7,13 +7,14 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.config import current_tz
+from app.config import current_tz, BASE_URL
 from app.auth.database import get_async_session
 from app.models.daily_report import DailyReport
 from app.crud.car import get_cars, get_car
 from app.utils.excel_file_utils import create_excel_file
 
 from app.models.exception_nums import StartEndTime
+from models.car import Car
 
 
 async def define_date_type(db: AsyncSession, date: str):
@@ -41,6 +42,8 @@ async def store_daily_report():
     async for session in get_async_session():
         async with session.begin():
             response = await get_cars(db=session, page=1, limit=10, date=current_date)
+            result = await session.execute(select(Car).filter_by(date=current_date))
+            cars_attendances = result.scalars().all()
 
             start_and_end_res = await session.execute(select(StartEndTime).limit(1))
             start_and_end = start_and_end_res.scalars().first()
@@ -48,9 +51,35 @@ async def store_daily_report():
             START_TIME = start_and_end.start_time
             END_TIME = start_and_end.end_time
 
+            attend_count = {}
+            unique_cars = set()
+            for car in cars_attendances:
+                if car.number not in attend_count:
+                    attend_count[car.number] = 1
+                else:
+                    attend_count[car.number] += 1
+
+                if car.number not in unique_cars:
+                    unique_cars.add(car.number)
+
+            sorted_cars = sorted(cars_attendances, key=lambda x: attend_count[x.number], reverse=True)
+
+            all_car_response = []
+            all_cars = set()
+            for car in sorted_cars:
+                if car.number not in all_cars:
+                    all_car_response.append({
+                        "attend_id": car.id,
+                        "car_number": car.number,
+                        "attend_date": car.date,
+                        "attend_time": car.time,
+                        "image_url": f"{BASE_URL}{car.image_url}",
+                        "attend_count": attend_count[car.number]
+                    })
+                    all_cars.add(car.number)
+
             top10 = response["top10"]
             total_cars = response["total_cars"]
-            all_cars = response["all_cars"]
 
             top10_cars = []
             for car in top10:
@@ -60,7 +89,7 @@ async def store_daily_report():
 
             cars_attendances_count = 0
             general_cars = []
-            for car in all_cars:
+            for car in all_car_response:
                 if car["attend_count"] > 2:
                     if START_TIME <= car["attend_time"] <= END_TIME:
                         general_cars.append(car)
