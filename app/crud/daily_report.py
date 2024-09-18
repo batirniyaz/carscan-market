@@ -10,11 +10,12 @@ from sqlalchemy.future import select
 from app.config import current_tz, BASE_URL
 from app.auth.database import get_async_session
 from app.models.daily_report import DailyReport
-from app.crud.car import get_cars, get_car
+from app.crud.car import get_car
 from app.utils.excel_file_utils import create_excel_file
 
 from app.models.exception_nums import StartEndTime
 from app.models.car import Car
+from app.crud.cars import get_cars_by_day
 
 
 async def define_date_type(db: AsyncSession, date: str):
@@ -42,7 +43,7 @@ async def store_daily_report():
 
     async for session in get_async_session():
         async with session.begin():
-            response = await get_cars(db=session, page=1, limit=10, date=date)
+            response = await get_cars_by_day(db=session, page=1, limit=10, date=date)
             result = await session.execute(select(Car).filter_by(date=date))
             cars_attendances = result.scalars().all()
 
