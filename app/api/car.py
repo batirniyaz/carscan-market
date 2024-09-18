@@ -60,7 +60,6 @@ async def create_car_endpoint(
 
 
 @router.get("/day")
-@cached(ttl=60)
 async def get_cars_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
@@ -92,7 +91,6 @@ async def get_cars_endpoint(
 
 
 @router.get("/month")
-@cached(ttl=60)
 async def get_cars_by_month_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
@@ -124,7 +122,6 @@ async def get_cars_by_month_endpoint(
 
 
 @router.get("/week")
-@cached(ttl=60)
 async def get_cars_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
@@ -156,7 +153,6 @@ async def get_cars_endpoint(
 
 
 @router.get("/{car_number}")
-@cached(ttl=60)
 async def get_car_endpoint(
         response: Response,
         car_number: str,
