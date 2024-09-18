@@ -103,10 +103,10 @@ async def get_cars_by_month_endpoint(
         ),
         user: User = Depends(current_active_user)
 ):
+    start_time = time.time()
+
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-
-    start_time = time.time()
 
     cars_data = await get_cars_by_month_pag(db=db, page=page, limit=limit, date=month)
 
@@ -115,6 +115,7 @@ async def get_cars_by_month_endpoint(
     response.headers["Server-Timing"] = (
         f"pag_query_duration;dur={cars_data['timing']['pag_query_duration']:.2f}, "
         f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
+        f"total_func_duration;dur={cars_data['timing']['total_func_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 

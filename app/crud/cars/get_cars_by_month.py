@@ -17,6 +17,7 @@ async def get_cars_by_month_pag(
         limit: Optional[int] = 10,
         date: str = None,
 ):
+    total_func_start = time.time()
     try:
         pag_query_start = time.time()
         pag_query = (select(Car)
@@ -48,6 +49,8 @@ async def get_cars_by_month_pag(
 
     calculation_duration = (time.time() - calculation_start) * 1000
 
+    total_func_duration = (time.time() - total_func_start) * 1000
+
     return {
         "general": last_attendances,
         "general_count": last_attendances_count,
@@ -56,7 +59,8 @@ async def get_cars_by_month_pag(
         "graphic": rounded_response,
         "timing": {
             "pag_query_duration": pag_query_duration,
-            "calculation_duration": calculation_duration
+            "calculation_duration": calculation_duration,
+            "total_func_duration": total_func_duration
         }
     }
 
