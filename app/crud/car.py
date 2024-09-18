@@ -13,11 +13,9 @@ from app.config import BASE_URL
 from app.models.car import Car
 from app.models.exception_nums import Number
 
-from app.config import current_tz
-
 from app.utils.file_utils import save_upload_file
 
-from app.crud.car_processes import (
+from app.crud.cars.car_processes import (
     process_last_attendances,
     process_attend_count,
     process_top10_response,
@@ -46,110 +44,6 @@ async def create_car(db: AsyncSession, number: str, date: str, time: str, image:
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-
-
-async def get_cars(
-        db: AsyncSession,
-        page: Optional[int] = 1,
-        limit: Optional[int] = 10,
-        date: str = None,
-        week: str = None
-):
-    query_start_time = time.time()
-    query = select(Car)
-    with_pagination_query = query.offset((page - 1) * limit).limit(limit)
-
-    external_res_start_time = time.time()
-    external_res = await db.execute(select(Number))
-    external_cars = external_res.scalars().all()
-    external_res_duration = (time.time() - external_res_start_time) * 1000
-
-    if date:
-        try:
-            if len(date) == 10:  # yyyy-mm-dd
-                query = query.filter_by(date=date)
-                with_pagination_query = with_pagination_query.filter_by(date=date).order_by(Car.time.desc())
-            elif len(date) == 7:  # yyyy-mm
-                query = query.filter(Car.date.startswith(date))
-                with_pagination_query = (with_pagination_query.filter(Car.date.startswith(date))
-                                         .order_by(Car.date.desc(), Car.time.desc()))
-            else:
-                raise ValueError
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid date format")
-
-    if week:
-        try:
-            if len(week) == 7:
-                year, week_num = week.split('-')
-                start_date = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w").date()
-                end_date = start_date + timedelta(days=6)
-                query = query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
-                with_pagination_query = (with_pagination_query.filter(Car.date.between(start_date.strftime("%Y-%m-%d"),
-                                                                                       end_date.strftime("%Y-%m-%d")))
-                                         .order_by(Car.date.desc(), Car.time.desc()))
-            else:
-                raise ValueError
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid week format")
-
-    result = await db.execute(query)
-    cars = result.scalars().all()
-    result_duration = (time.time() - query_start_time) * 1000
-
-    with_pagination_result = await db.execute(with_pagination_query)
-    cars_with_pagination = with_pagination_result.scalars().all()
-
-    external_car_numbers = [external.number for external in external_cars]
-    cars_with_pagination = [car for car in cars_with_pagination if car.number not in external_car_numbers]
-    cars = [car for car in cars if car.number not in external_car_numbers]
-
-    attendance_start_time = time.time()
-    with ThreadPoolExecutor() as executor:
-        last_attendances_future = executor.submit(process_last_attendances, cars_with_pagination)
-        last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
-        attend_count_future = executor.submit(process_attend_count, cars)
-
-        last_attendances = last_attendances_future.result()
-        attend_count, unique_cars, sorted_cars, attend_count_cars, attend_count_car = attend_count_future.result()
-
-        top10response_future = executor.submit(process_top10_response, sorted_cars, attend_count)
-
-        rounded_response_future = None
-        if date:
-            if len(date) == 10:
-                rounded_response_future = executor.submit(process_rounded_time, cars)
-            elif len(date) == 7:
-                rounded_response_future = executor.submit(process_rounded_month, cars)
-        elif week:
-            rounded_response_future = executor.submit(process_rounded_weekday, cars)
-
-        last_attendances_count = last_attendances_count_future.result()
-        top10response = top10response_future.result()
-        rounded_response = rounded_response_future.result() if rounded_response_future else []
-    attendance_duration = (time.time() - attendance_start_time) * 1000
-
-    test_duration = None
-    if date:
-        start_test = time.time()
-        test_cars = await db.execute(select(Car).filter(Car.date.startswith(date)).offset((page - 1) * limit).limit(limit))
-        test_cars = test_cars.scalars().all()
-        end_test = time.time()
-        test_duration = (end_test - start_test) * 1000
-
-    return {
-        "general": last_attendances,
-        "general_count": last_attendances_count,
-        "top10": top10response,
-        "total_cars": len(unique_cars),
-        "graphic": rounded_response if rounded_response else [],
-        "timing": {
-            "query_duration": result_duration,
-            "external_query_duration": external_res_duration,
-            "attendance_duration": attendance_duration,
-            "test_duration": test_duration if test_duration else 0
-        }
-    }
 
 
 async def get_car(
@@ -286,7 +180,7 @@ async def get_car(
                 }
             )
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date or car format")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date or cars format")
 
     return response
 
