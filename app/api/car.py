@@ -12,6 +12,7 @@ from app.auth.base_config import current_active_user
 from aiocache import cached
 
 from app.crud.cars import get_cars_by_week, get_cars_by_day, get_cars_by_month
+from app.crud.cars import get_cars_by_month_pag
 
 router = APIRouter()
 
@@ -109,12 +110,11 @@ async def get_cars_by_month_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars_by_month(db=db, page=page, limit=limit, date=month)
+    cars_data = await get_cars_by_month_pag(db=db, page=page, limit=limit, date=month)
 
     total_duration = (time.time() - start_time) * 1000
 
     response.headers["Server-Timing"] = (
-        f"query_duration;dur={cars_data['timing']['query_duration']:.2f}, "
         f"pag_query_duration;dur={cars_data['timing']['pag_query_duration']:.2f}, "
         f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"

@@ -8,7 +8,7 @@ from app.crud.cars.car_processes import (
 )
 
 
-def call_processes(pag_cars, cars):
+def call_processes(pag_cars, cars: list = None):
     with ThreadPoolExecutor() as executor:
         last_attendances_future = executor.submit(process_last_attendances, pag_cars)
         last_attendances_count_future = executor.submit(process_last_attendances_without_pagination, cars)
@@ -22,4 +22,4 @@ def call_processes(pag_cars, cars):
         last_attendances_count = last_attendances_count_future.result()
         top10response = top10response_future.result()
 
-    return last_attendances, last_attendances_count, top10response, top10response, unique_cars
+    return last_attendances, last_attendances_count, top10response, unique_cars

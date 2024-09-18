@@ -44,7 +44,6 @@ async def get_cars_by_day(
     (last_attendances,
      last_attendances_count,
      top10response,
-     top10response,
      unique_cars) = call_processes(pag_cars, cars)
 
     rounded_response = process_rounded_time(cars)

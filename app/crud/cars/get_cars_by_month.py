@@ -8,23 +8,22 @@ from typing import Optional
 from app.models.car import Car
 from app.models.exception_nums import Number
 from app.crud.cars.call_processes import call_processes
-from app.crud.cars.car_processes import process_rounded_month
+from app.crud.cars.car_processes import process_last_attendances
 
 
-async def get_cars_by_month(
+async def get_cars_by_month_pag(
         db: AsyncSession,
         page: Optional[int] = 1,
         limit: Optional[int] = 10,
         date: str = None,
 ):
     try:
-        query_start = time.time()
-        query = select(Car).filter(Car.date.startswith(date))
-        result = await db.execute(query)
-        cars = result.scalars().all()
-        query_duration = (time.time() - query_start) * 1000
         pag_query_start = time.time()
-        pag_query = query.limit(limit).offset((page - 1) * limit).order_by(Car.date.desc(), Car.time.desc())
+        pag_query = (select(Car)
+                     .filter(Car.date.startswith(date))
+                     .limit(limit)
+                     .offset((page - 1) * limit)
+                     .order_by(Car.date.desc(), Car.time.desc()))
         pag_result = await db.execute(pag_query)
         pag_cars = pag_result.scalars().all()
         pag_query_duration = (time.time() - pag_query_start) * 1000
@@ -36,19 +35,16 @@ async def get_cars_by_month(
 
     # Remove cars with exception numbers
     exception_car_nums = [exception_num.number for exception_num in exception_nums]
-    cars = [car for car in cars if car.number not in exception_car_nums]
     pag_cars = [car for car in pag_cars if car.number not in exception_car_nums]
 
     # Car calculation processing
     calculation_start = time.time()
 
-    (last_attendances,
-     last_attendances_count,
-     top10response,
-     top10response,
-     unique_cars) = call_processes(pag_cars, cars)
-
-    rounded_response = process_rounded_month(cars)
+    last_attendances = process_last_attendances(pag_cars)
+    last_attendances_count = len(last_attendances)
+    top10response = []
+    unique_cars = set()
+    rounded_response = []
 
     calculation_duration = (time.time() - calculation_start) * 1000
 
@@ -59,8 +55,26 @@ async def get_cars_by_month(
         "total_cars": len(unique_cars),
         "graphic": rounded_response,
         "timing": {
-            "query_duration": query_duration,
             "pag_query_duration": pag_query_duration,
             "calculation_duration": calculation_duration
         }
     }
+
+
+async def get_cars_by_month(
+        db: AsyncSession,
+        date: str,
+):
+    try:
+        query_start = time.time()
+        query = select(Car).filter(Car.date.startswith(date))
+        result = await db.execute(query)
+        cars = result.scalars().all()
+        query_duration = (time.time() - query_start) * 1000
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+
+    return ...
+
+
+
