@@ -51,6 +51,11 @@ async def get_cars_by_month(
 
     calculation_duration = (time.time() - calculation_start) * 1000
 
+    query_test_start = time.time()
+    result = await db.execute(select(Car).filter(Car.date.startswith(date)))
+    cars = result.scalars().all()
+    query_test_duration = (time.time() - query_start) * 1000
+
     return {
         "general": last_attendances,
         "general_count": last_attendances_count,
@@ -60,7 +65,8 @@ async def get_cars_by_month(
         "timing": {
             "query_duration": query_duration,
             "pag_query_duration": pag_query_duration,
-            "calculation_duration": calculation_duration
+            "calculation_duration": calculation_duration,
+            "query_test_duration": query_test_duration
         }
     }
 

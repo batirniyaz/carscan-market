@@ -115,6 +115,7 @@ async def get_cars_by_month_endpoint(
         f"query_duration;dur={cars_data['timing']['query_duration']:.2f}, "
         f"pag_query_duration;dur={cars_data['timing']['pag_query_duration']:.2f}, "
         f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
+        f"query_test_duration;dur={cars_data['timing']['query_test_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
