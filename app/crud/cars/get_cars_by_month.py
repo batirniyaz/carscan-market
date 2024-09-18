@@ -49,7 +49,7 @@ async def get_cars_by_month_pag(
 
     calculation_duration = (time.time() - calculation_start) * 1000
 
-    time.sleep(.300)
+    time.sleep(.500)
 
     total_func_duration = (time.time() - total_func_start) * 1000
 
