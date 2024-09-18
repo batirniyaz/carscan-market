@@ -6,10 +6,12 @@ from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPExc
 from app.schemas.car import CarResponse
 from app.auth.database import get_async_session, User
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.car import create_car, get_cars, get_car
+from app.crud.car import create_car, get_car
 
 from app.auth.base_config import current_active_user
 from aiocache import cached
+
+from app.crud.cars import get_cars_by_week, get_cars_by_day, get_cars_by_month
 
 router = APIRouter()
 
@@ -75,15 +77,13 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars(db=db, page=page, limit=limit, date=day)
+    cars_data = await get_cars_by_day(db=db, page=page, limit=limit, date=day)
 
     total_duration = (time.time() - start_time) * 1000
 
     response.headers["Server-Timing"] = (
-        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
-        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
-        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
-        f"test_duration;dur={cars_data['timing']['test_duration']:.2f}, "
+        f"query_duration;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
@@ -92,7 +92,7 @@ async def get_cars_endpoint(
 
 @router.get("/month")
 @cached(ttl=60)
-async def get_cars_endpoint(
+async def get_cars_by_month_endpoint(
         response: Response,
         db: AsyncSession = Depends(get_async_session),
         page: int = Query(1, description="The page number", alias="page"),
@@ -109,15 +109,13 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars(db=db, page=page, limit=limit, date=month)
+    cars_data = await get_cars_by_month(db=db, page=page, limit=limit, date=month)
 
     total_duration = (time.time() - start_time) * 1000
 
     response.headers["Server-Timing"] = (
-        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
-        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
-        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
-        f"test_duration;dur={cars_data['timing']['test_duration']:.2f}, "
+        f"query_duration;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
@@ -143,14 +141,13 @@ async def get_cars_endpoint(
 
     start_time = time.time()
 
-    cars_data = await get_cars(db=db, page=page, limit=limit, date=None, week=week)
+    cars_data = await get_cars_by_week(db=db, page=page, limit=limit, week=week)
 
     total_duration = (time.time() - start_time) * 1000
 
     response.headers["Server-Timing"] = (
-        f"external_numbers;dur={cars_data['timing']['external_query_duration']:.2f}, "
-        f"car_calculations;dur={cars_data['timing']['attendance_duration']:.2f}, "
-        f"car_from_db;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"query_duration;dur={cars_data['timing']['query_duration']:.2f}, "
+        f"calculation_duration;dur={cars_data['timing']['calculation_duration']:.2f}, "
         f"total;dur={total_duration:.2f}"
     )
 
@@ -167,7 +164,7 @@ async def get_car_endpoint(
         limit: int = Query(10, description="The number of cars per page", alias="limit"),
         date: str = Query(
             ...,
-            description="The month or day of the car",
+            description="The month or day of the cars",
             alias="date",
             example=f"{datetime.now(current_tz).strftime('%Y-%m')}",
         ),
