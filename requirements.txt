@@ -56,4 +56,4 @@ pandas==2.0.2
 schedule==1.2.2
 openpyxl==3.1.5
 aiocache==0.12.2
-pillow==11.0.0
+pillow==10.4.0
