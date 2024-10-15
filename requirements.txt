@@ -52,7 +52,8 @@ uvicorn==0.30.5
 passlib==1.7.4
 python-jose==3.3.0
 pytz==2024.1
-pandas==2.0.2
+pandas==2.2.2
 schedule==1.2.2
 openpyxl==3.1.5
 aiocache==0.12.2
+pillow==11.0.0
