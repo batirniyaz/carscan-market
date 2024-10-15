@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -53,3 +56,21 @@ async def get_unknown_cars(db: AsyncSession, date: str, page: int = 1, limit: in
         )
 
     return response
+
+
+async def delete_unknown_cars(db: AsyncSession):
+    res = await db.execute(select(UnknownCar))
+    cars = res.scalars().all()
+
+    for car in cars:
+        image_path = Path(car.image_url).name
+        full_image_path = Path('app/storage') / image_path
+
+        if full_image_path.exists():
+            os.remove(full_image_path)
+        else:
+            print(f"File not found: {full_image_path}")
+
+        await db.delete(car)
+
+    await db.commit()
