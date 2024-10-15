@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.base_config import current_active_user
 from app.auth.database import get_async_session, User
 from app.config import current_tz
-from app.crud.unknown_car import create_unknown_car, get_unknown_cars
+from app.crud.unknown_car import create_unknown_car, get_unknown_cars, delete_unknown_cars
 from app.schemas.unknown_car import UnknownCarResponse
 from fastapi import APIRouter, Depends, Query, File, UploadFile, HTTPException, status
 from aiocache import cached
@@ -69,5 +69,17 @@ async def get_unknown_cars_endpoint(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     return await get_unknown_cars(db=db, date=date, page=page, limit=limit)
+
+
+@router.delete("/")
+async def delete_unknown_car_endpoint(
+        db: AsyncSession = Depends(get_async_session),
+        user: User = Depends(current_active_user)
+):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
+    return await delete_unknown_cars(db=db)
+
 
 
