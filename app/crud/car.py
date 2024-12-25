@@ -17,7 +17,7 @@ from app.utils.file_utils import s3_manager
 async def migrate_images_to_s3(db: AsyncSession):
     try:
         # Получение всех записей с локальным `image_url`
-        query = select(Car).where(Car.image_url.like("/storage%"))
+        query = select(Car).where(Car.image_url.like("/storage%")).limit(100)
         result = await db.execute(query)
         cars = result.scalars().all()
         print(f"Найдено {len(cars)} записей с локальным `image_url`")
