@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import Optional
 
-from app.config import BASE_URL, AWS_ENDPOINT_URL, AWS_BUCKET_NAME
+from app.config import BASE_URL, AWS_ENDPOINT_URL, AWS_BUCKET_NAME, BASE_PATH
 from app.crud.cars.car_processes import (
     process_attend_count
 )
@@ -22,7 +22,7 @@ async def migrate_images_to_s3(db: AsyncSession):
         cars = result.scalars().all()
         print(f"Найдено {len(cars)} записей с локальным `image_url`")
         for car in cars:
-            local_path = f'/home/stargroup/projects/car_scan/app{car.image_url}'
+            local_path = f'{BASE_PATH}{car.image_url}'
             print(local_path)
             if not os.path.exists(local_path):
                 continue
