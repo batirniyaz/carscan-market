@@ -54,7 +54,7 @@ async def search(db: AsyncSession):
                 last_attendance[unique_car.number] = {
                     "date": unique_car.date,
                     "time": unique_car.time,
-                    "image_url": f"{BASE_URL}{unique_car.image_url}"
+                    "image_url": unique_car.image_url
                 }
 
     response = []

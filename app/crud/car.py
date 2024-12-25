@@ -1,44 +1,32 @@
-import time
-from datetime import datetime, timedelta
+import os
+from datetime import datetime
 from typing import Optional
 
 from fastapi import UploadFile, HTTPException, status
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from concurrent.futures import ThreadPoolExecutor
 
-from app.config import BASE_URL
-
-from app.models.car import Car
-from app.models.exception_nums import Number
-
-from app.utils.file_utils import save_upload_file
-
+from app.config import BASE_URL, AWS_ENDPOINT_URL, AWS_BUCKET_NAME
 from app.crud.cars.car_processes import (
-    process_last_attendances,
-    process_attend_count,
-    process_top10_response,
-    process_rounded_time,
-    process_rounded_month,
-    process_rounded_weekday,
-    process_last_attendances_without_pagination
+    process_attend_count
 )
+from app.models.car import Car
 from app.utils.excel_file_utils import create_excel_file
+from app.utils.file_utils import s3_manager
 
 
 async def create_car(db: AsyncSession, number: str, date: str, time: str, image: UploadFile):
     try:
-        main_image_url = f"/storage/"
-        file_path = save_upload_file(image)
-        image_url = f"{main_image_url}{file_path}"
 
-        db_car = Car(number=number, date=date, time=time, image_url=image_url)
+        file_path = await s3_manager.upload_image(image=image, key=image.filename)
+        image_url = os.path.join(AWS_ENDPOINT_URL, AWS_BUCKET_NAME, file_path)
+
+        db_car = Car(number=number, date=date, time=time, image_url=str(image_url))
         db.add(db_car)
         await db.commit()
         await db.refresh(db_car)
 
-        db_car.image_url = f"{BASE_URL}{image_url}"
+        db_car.image_url = f"{image_url}"
 
         return db_car
     except Exception as e:
@@ -127,9 +115,9 @@ async def get_car(
                     "date": date,
                     "car_number": first_attendances[date].number,
                     "first_time": first_attendances[date].time,
-                    "first_image": f"{BASE_URL}{first_attendances[date].image_url}",
+                    "first_image": first_attendances[date].image_url,
                     "last_time": last_attendances[date].time,
-                    "last_image": f"{BASE_URL}{last_attendances[date].image_url}",
+                    "last_image": last_attendances[date].image_url,
                     "overall_count": attend_count_car[date][car_number]["count"] if date in attend_count_car else 0
                 }
             )
@@ -140,7 +128,7 @@ async def get_car(
             for car in sorted_cars_attendances:
                 special_response["cars"].append({
                     "time": car.time,
-                    "image": f"{BASE_URL}{car.image_url}",
+                    "image": car.image_url,
                 })
 
                 special_response["overall_count"] += 1
@@ -152,7 +140,7 @@ async def get_car(
                 response.append(
                     {
                         "time": car.time,
-                        "image": f"{BASE_URL}{car.image_url}",
+                        "image": car.image_url,
                     }
                 )
 
@@ -174,9 +162,9 @@ async def get_car(
                 {
                     "car_number": number,
                     "first_time": first_attendances[number].time,
-                    "first_image": f"{BASE_URL}{first_attendances[number].image_url}",
+                    "first_image": first_attendances[number].image_url,
                     "last_time": last_attendances[number].time,
-                    "last_image": f"{BASE_URL}{last_attendances[number].image_url}"
+                    "last_image": last_attendances[number].image_url
                 }
             )
     else:

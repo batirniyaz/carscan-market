@@ -1,32 +1,98 @@
-from fastapi import UploadFile
-from pathlib import Path
-from PIL import Image
-import io
+import logging
+from typing import Optional
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-IMAGE_DIR = BASE_DIR / "storage"
+import aioboto3
+import cv2
+import numpy as np
+from botocore.exceptions import ClientError
+from fastapi import HTTPException, status, UploadFile
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+from app.config import AWS_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL
 
 
-def save_upload_file(upload_file: UploadFile, quality: int = 20) -> str:
-    file_location = IMAGE_DIR / upload_file.filename
+class S3Manager:
+    def __init__(self):
+        self.bucket_name = AWS_BUCKET_NAME
+        self.endpoint_url = AWS_ENDPOINT_URL
+        self.session = aioboto3.Session()
 
-    image = Image.open(upload_file.file)
+    async def _get_client(self):
+        return self.session.client(
+            "s3",
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            endpoint_url=self.endpoint_url,
+        )
 
-    if image.format != 'JPEG':
-        image = image.convert('RGB')
+    async def download_file(self, key: str, download_path: str):
+        try:
+            async with await self._get_client() as s3_client:
+                await s3_client.download_file(
+                    Bucket=self.bucket_name, Key=key, Filename=download_path
+                )
+                logger.info(f"Файл {key} скачан в {download_path}")
+        except ClientError as e:
+            logger.error(f"Ошибка при скачивании файла {key}: {e}")
+            raise
 
-    original_size = upload_file.file.seek(0, io.SEEK_END)
-    upload_file.file.seek(0)
+    async def delete_file(self, key: str):
+        try:
+            async with await self._get_client() as s3_client:
+                await s3_client.delete_object(Bucket=self.bucket_name, Key=key)
+                logger.info(f"Файл {key} удален из S3")
+        except ClientError as e:
+            logger.error(f"Ошибка при удалении файла {key}: {e}")
+            raise
 
-    with io.BytesIO() as buffer:
-        image.save(buffer, format='JPEG', quality=quality)
-        buffer.seek(0)
-        compressed_size = buffer.getbuffer().nbytes
+    async def get_presigned_url(self, key: str, expiration: int = 3600) -> str:
+        try:
+            async with await self._get_client() as s3_client:
+                url = await s3_client.generate_presigned_url(
+                    ClientMethod="get_object",
+                    Params={"Bucket": self.bucket_name, "Key": key},
+                    ExpiresIn=expiration,
+                )
+                logger.info(f"Создана ссылка на {key}")
+                return url
+        except ClientError as e:
+            logger.error(f"Ошибка генерации ссылки для {key}: {e}")
+            raise
 
-        with open(file_location, "wb") as out_file:
-            out_file.write(buffer.read())
+    async def upload_image(
+            self, image: UploadFile, key: str, format: str = "jpg"
+    ) -> Optional[str]:
+        """Загрузить изображение в S3."""
+        try:
+            file_content = await image.read()
+            image_array = np.frombuffer(file_content, dtype=np.uint8)
+            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
-    print(f"Original size: {original_size} bytes")
-    print(f"Compressed size: {compressed_size} bytes")
+            if image is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Неверный формат изображения",
+                )
 
-    return upload_file.filename
+            # Кодирование изображения в буфер
+            success, buffer = cv2.imencode(f".{format}", image)
+            if not success:
+                raise ValueError("Ошибка при кодировании изображения")
+
+            async with await self._get_client() as s3_client:
+                await s3_client.put_object(
+                    Bucket=self.bucket_name,
+                    Key=key,
+                    Body=buffer.tobytes(),
+                    ContentType="image/jpeg",
+                )
+                logger.info(f"Изображение сохранено как {key}")
+                return key
+        except ClientError as e:
+            logger.error(f"Ошибка при загрузке изображения: {e}")
+            raise
+
+# Инициализация менеджера S3
+s3_manager = S3Manager()

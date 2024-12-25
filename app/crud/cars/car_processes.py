@@ -14,7 +14,7 @@ def process_last_attendances(cars_with_pagination):
             "car_number": car.number,
             "attend_date": car.date,
             "attend_time": car.time,
-            "image_url": f"{BASE_URL}{car.image_url}"
+            "image_url": car.image_url
         })
 
     return last_attendances
@@ -76,7 +76,7 @@ def process_top10_response(sorted_cars, attend_count):
                 "car_number": car.number,
                 "attend_date": car.date,
                 "attend_time": car.time,
-                "image_url": f"{BASE_URL}{car.image_url}",
+                "image_url": car.image_url,
                 "attend_count": attend_count[car.number]
             })
             added_cars.add(car.number)

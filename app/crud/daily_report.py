@@ -74,7 +74,7 @@ async def store_daily_report():
                         "car_number": car.number,
                         "attend_date": car.date,
                         "attend_time": car.time,
-                        "image_url": f"{BASE_URL}{car.image_url}",
+                        "image_url": car.image_url,
                         "attend_count": attend_count[car.number]
                     })
                     all_cars.add(car.number)

@@ -16,3 +16,8 @@ ALGORITHM = os.getenv("ALGORITHM")
 BASE_URL = os.getenv("BASE_URL")
 
 current_tz = pytz.timezone("Asia/Samarkand")
+
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_KEY")
+AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
+AWS_ENDPOINT_URL = os.getenv("AWS_ENDPOINT_URL")
