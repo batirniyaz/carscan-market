@@ -1,17 +1,15 @@
 import time
 from datetime import datetime
-from app.config import current_tz
 
 from fastapi import APIRouter, Depends, Query, UploadFile, File, status, HTTPException, Response
-from app.schemas.car import CarResponse
-from app.auth.database import get_async_session, User
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.crud.car import create_car, get_car
 
 from app.auth.base_config import current_active_user
-from aiocache import cached
-
+from app.auth.database import get_async_session, User
+from app.config import current_tz
+from app.crud.car import create_car, get_car, migrate_images_to_s3
 from app.crud.cars import get_cars_by_week, get_cars_by_day, get_cars_by_month
+from app.schemas.car import CarResponse
 
 router = APIRouter()
 
@@ -151,6 +149,11 @@ async def get_cars_endpoint(
 
     return cars_data
 
+@router.get("/migrate")
+async def search_cars_endpoint(
+        db: AsyncSession = Depends(get_async_session)):
+    await migrate_images_to_s3(db, )
+
 
 @router.get("/{car_number}")
 async def get_car_endpoint(
@@ -185,3 +188,5 @@ async def get_car_endpoint(
     )
 
     return car_data
+
+

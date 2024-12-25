@@ -1,10 +1,9 @@
 import os
 from datetime import datetime
-from typing import Optional
-
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from typing import Optional
 
 from app.config import BASE_URL, AWS_ENDPOINT_URL, AWS_BUCKET_NAME
 from app.crud.cars.car_processes import (
@@ -13,6 +12,41 @@ from app.crud.cars.car_processes import (
 from app.models.car import Car
 from app.utils.excel_file_utils import create_excel_file
 from app.utils.file_utils import s3_manager
+
+
+async def migrate_images_to_s3(db: AsyncSession):
+    try:
+        # Получение всех записей с локальным `image_url`
+        query = select(Car).where(Car.image_url.like("/storage%"))
+        result = await db.execute(query)
+        cars = result.scalars().all()
+        print(f"Найдено {len(cars)} записей с локальным `image_url`")
+        for car in cars:
+            local_path = f'/home/stargroup/projects/car_scan/app{car.image_url}'
+            print(local_path)
+            if not os.path.exists(local_path):
+                continue
+
+            # Генерация S3 ключа (например, используем имя файла)
+            filename = os.path.basename(local_path)
+            s3_key = filename
+
+            # Загрузка файла в S3
+            s3_url = await s3_manager.upload_file(file_path=local_path, key=s3_key, content_type="image/jpeg")
+
+            # Обновление URL в базе данных
+            car.image_url = str(os.path.join(AWS_ENDPOINT_URL, AWS_BUCKET_NAME, s3_url))
+            print(f"Файл {local_path} перемещен в S3: {s3_url}")
+
+            # Удаление локального файла (опционально)
+            os.remove(local_path)
+
+            await db.commit()
+
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Ошибка при миграции изображений: {e}")
+        raise
 
 
 async def create_car(db: AsyncSession, number: str, date: str, time: str, image: UploadFile):

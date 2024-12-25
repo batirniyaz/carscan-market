@@ -27,6 +27,25 @@ class S3Manager:
             endpoint_url=self.endpoint_url,
         )
 
+    async def upload_file(
+        self, file_path: str, key: str, content_type: Optional[str] = None
+    ):
+        """Загрузить файл в S3."""
+        try:
+            async with await self._get_client() as s3_client:
+                extra_args = {"ContentType": content_type} if content_type else {}
+                await s3_client.upload_file(
+                    Filename=file_path,
+                    Bucket=self.bucket_name,
+                    Key=key,
+                    ExtraArgs=extra_args,
+                )
+                logger.info(f"Файл {file_path} загружен как {key}")
+                return key
+        except ClientError as e:
+            logger.error(f"Ошибка при загрузке файла {file_path}: {e}")
+            raise
+
     async def download_file(self, key: str, download_path: str):
         try:
             async with await self._get_client() as s3_client:
